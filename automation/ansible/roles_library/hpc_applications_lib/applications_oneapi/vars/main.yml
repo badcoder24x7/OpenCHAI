@@ -1,0 +1,4 @@
+# Packages to install
+required_packages:
+  - patch
+  - git

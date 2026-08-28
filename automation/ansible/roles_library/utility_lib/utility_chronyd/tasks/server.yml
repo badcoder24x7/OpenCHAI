@@ -1,0 +1,20 @@
+---
+# ============================================================
+# Chrony Server Configuration
+# ============================================================
+
+- name: Validate NTP server list
+  ansible.builtin.assert:
+    that:
+      - chrony_ntp_servers | length > 0
+    fail_msg: >
+      chrony_ntp_servers must contain at least one NTP server.
+
+- name: Deploy Chrony server configuration
+  ansible.builtin.template:
+    src: chrony-server.conf.j2
+    dest: "{{ chrony_conf_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Chrony

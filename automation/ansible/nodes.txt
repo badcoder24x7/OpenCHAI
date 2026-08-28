@@ -1,0 +1,9 @@
+# ansible_hostname  ip  ansible_user  ansible_password  group  hostname  ssh_port
+#
+# Auto-managed by OpenCHAI GUI — edit via the Inventory Management page
+#
+headnode          172.10.3.201  root          headnode    cn01      22   redhat@@#@#$
+hpc-master01      172.10.3.6    root          hpc_master  cn06      22   redhat@@#@#$
+hpc-master02      172.10.3.8    root          hpc_master  cn08      22   redhat@@#@#$
+test              1.1.1.1       root          ggg         test      22   redhat@@#@#$
+client            2.2.2.2       admin         ggg         client1   22   red

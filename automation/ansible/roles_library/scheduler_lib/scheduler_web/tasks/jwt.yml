@@ -1,0 +1,21 @@
+# roles/slurm_web/tasks/jwt.yml
+---
+
+- name: Check if JWT key exists
+  ansible.builtin.stat:
+    path: "{{ jwt_key_path }}"
+  register: jwt_key
+
+
+- name: Generate JWT key if not exists
+  ansible.builtin.command: >
+    dd if=/dev/random of={{ jwt_key_path }} bs=32 count=1
+  when: not jwt_key.stat.exists
+
+
+- name: Set ownership of JWT key
+  ansible.builtin.file:
+    path: "{{ jwt_key_path }}"
+    owner: slurm
+    group: slurm
+    mode: "0600"

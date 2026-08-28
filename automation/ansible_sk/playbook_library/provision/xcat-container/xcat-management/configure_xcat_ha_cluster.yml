@@ -1,0 +1,23 @@
+---
+- name: Deploy and configure xCAT container in HA (DRBD + Docker Swarm)
+  hosts: all
+  become: yes
+  gather_facts: false
+
+  vars_files:
+    - ../../../../group_vars/all.yml
+
+  vars:
+    swarm_label_key: xcat_master
+    swarm_label_value: true
+    xCAT_reg_path: "{{ hpcsuite_registry_mount_path }}/container_img_reg/xCAT_reg"
+    xcat_version: "{{ xcat_version_tag }}"
+    xcat_image: "{{ xcat_docker_img }}"
+    xcat_container_img: "{{ xcat_container_img_tar }}"
+    xcat_reg_network_url: "{{ hpcsangrah_vault_network_url }}/OpenCHAI/hpcsuite_registry/container_img_reg/{{ os_version }}/xCAT_reg/{{ xcat_version }}/{{ xcat_container_img }}"
+    xcat_provisioning_osimage_network_url: "{{ hpcsangrah_vault_network_url }}/OpenCHAI/hpcsuite_registry/provisioning_osimage/{{ os_version }}"
+    ssl_certificate_check: no
+    xcatdata_base_config: "xcatdata_{{ os_version }}.tgz"
+
+  roles:
+    - role: "{{ roles_parent_path }}/provision_lib/xcat_container_lib"

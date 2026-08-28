@@ -1,0 +1,9 @@
+# Core dependencies — always required.
+click>=8.0,<9
+requests>=2.28,<3
+
+# Optional — only needed for live log streaming:
+#   `chai logs follow`, `chai logs tail`, and `--watch` on
+#   `chai playbooks execute` / `chai deploy start`.
+# Uncomment, or run: pip install "chai-cli[live]"
+# websockets>=11,<13

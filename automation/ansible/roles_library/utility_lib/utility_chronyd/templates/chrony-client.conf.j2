@@ -1,0 +1,70 @@
+# ============================================================
+# Chrony Server Configuration
+# Managed by Ansible
+# ============================================================
+
+
+# ============================================================
+# Internal Chrony Servers
+# ============================================================
+
+{% for chrony_server in chrony_server_hosts | default([], true) %}
+server {{ chrony_server }} iburst
+{% endfor %}
+
+
+# ============================================================
+# External NTP Servers
+# ============================================================
+
+{% if not (chrony_use_only_internal_servers | bool) %}
+{% for ntp_server in chrony_ntp_servers | default([], true) %}
+server {{ ntp_server }} iburst
+{% endfor %}
+{% endif %}
+
+pool in.pool.ntp.org iburst
+
+# Use NTP servers from DHCP.
+sourcedir /run/chrony-dhcp
+
+# Record the rate at which the system clock gains/losses time.
+driftfile /var/lib/chrony/drift
+
+# Step clock immediately when offset is large
+makestep {{ chrony_makestep_threshold }} {{ chrony_makestep_limit }}
+
+# Synchronize RTC
+rtcsync
+
+# Enable hardware timestamping on all interfaces that support i
+#hwtimestamp *
+
+# Increase the minimum number of selectable sources required to
+# the system clock.
+#minsources 2
+
+# Serve time even if not synchronized to a time source.
+#local stratum 10
+
+# Require authentication (nts or key option) for all NTP source
+#authselectmode require
+
+# Specify file containing keys for NTP authentication.
+keyfile /etc/chrony.keys
+
+# Save NTS keys and cookies.
+ntsdumpdir /var/lib/chrony
+
+# Insert/delete leap seconds by slewing instead of stepping.
+#leapsecmode slew
+
+# Get TAI-UTC offset and leap seconds from the system tz databa
+#leapsectz right/UTC
+
+# Specify directory for log files.
+logdir /var/log/chrony
+
+# Select which information is logged.
+#log measurements statistics tracking
+

@@ -1,0 +1,139 @@
+---
+
+- name: Ensure required packages are installed using rpm only
+  block:
+
+    - name: Ensure Development RPM directory exists
+      ansible.builtin.file:
+        path: "{{ dev_rpm_path }}"
+        state: directory
+        mode: "0755"
+
+    - name: Gather installed package list using rpm
+      ansible.builtin.command: rpm -qa --qf '%{NAME}\n'
+      register: installed_rpms
+      changed_when: false
+
+    - name: Determine missing required packages
+      ansible.builtin.set_fact:
+        missing_packages: "{{ required_packages | difference(installed_rpms.stdout_lines) }}"
+
+    - name: Show missing packages
+      ansible.builtin.debug:
+        msg: "Missing packages: {{ missing_packages }}"
+      when: missing_packages | length > 0
+
+    - name: Find local RPMs for missing packages
+      ansible.builtin.find:
+        paths: "{{ dev_rpm_path }}"
+        patterns: "{{ item }}-*.rpm"
+      loop: "{{ missing_packages }}"
+      register: found_rpms
+      when: missing_packages | length > 0
+
+    - name: Fail if any required RPM is missing locally
+      ansible.builtin.fail:
+        msg: "RPM for package {{ item.item }} not found in {{ dev_rpm_path }}"
+      when:
+        - missing_packages | length > 0
+        - item.matched == 0
+      loop: "{{ found_rpms.results }}"
+
+    - name: Install missing packages using rpm
+      ansible.builtin.command: >
+        rpm -Uvh --nosignature --nodeps
+        {{ found_rpms.results | map(attribute='files') | flatten | map(attribute='path') | join(' ') }}
+      when: missing_packages | length > 0
+      ignore_errors: true
+
+
+# =========================================================
+# SQL Packages (Local RPM → Online fallback)
+# =========================================================
+
+- name: Check installed SQL packages
+  ansible.builtin.command:
+    cmd: "rpm -q {{ item }}"
+  loop: "{{ sql_packages }}"
+  register: sql_check
+  failed_when: false
+  changed_when: false
+
+- name: Identify missing SQL packages
+  ansible.builtin.set_fact:
+    missing_sql_pkgs: >-
+      {{
+        sql_check.results
+        | selectattr('rc', 'ne', 0)
+        | map(attribute='item')
+        | list
+      }}
+
+# =========================================================
+# Method 1: Install local RPMs one by one
+# =========================================================
+
+- name: Locate local SQL RPMs
+  ansible.builtin.find:
+    paths: "{{ slurm_rpm_base }}/auth"
+    patterns: "*.rpm"
+    file_type: file
+  register: sql_rpms
+  when: missing_sql_pkgs | length > 0
+
+- name: Install local RPMs one by one using rpm command
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -Uvh
+      - "{{ item.path }}"
+  loop: "{{ sql_rpms.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: sql_rpm_install
+  failed_when: false
+  changed_when: sql_rpm_install.rc == 0
+  when:
+    - missing_sql_pkgs | length > 0
+    - sql_rpms.files | default([]) | length > 0
+
+# =========================================================
+# Recheck packages after local RPM installation
+# =========================================================
+
+- name: Recheck SQL packages after local RPM installation
+  ansible.builtin.command:
+    cmd: "rpm -q {{ item }}"
+  loop: "{{ missing_sql_pkgs }}"
+  register: sql_post_local
+  failed_when: false
+  changed_when: false
+  when: missing_sql_pkgs | length > 0
+
+- name: Identify SQL packages still missing
+  ansible.builtin.set_fact:
+    still_missing_sql_pkgs: >-
+      {{
+        sql_post_local.results | default([])
+        | selectattr('rc', 'ne', 0)
+        | map(attribute='item')
+        | list
+      }}
+
+# =========================================================
+# Method 2: Install remaining packages from online repos
+# =========================================================
+
+- name: Install remaining SQL packages from online repositories
+  ansible.builtin.dnf:
+    name: "{{ still_missing_sql_pkgs }}"
+    state: present
+  when: still_missing_sql_pkgs | length > 0
+  ignore_errors: true
+
+- name: Enable and start MariaDB
+  ansible.builtin.systemd:
+    name: "{{ slurmdb_mysql_service }}"
+    enabled: true
+    state: started
+

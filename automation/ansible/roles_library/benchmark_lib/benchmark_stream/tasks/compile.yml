@@ -1,0 +1,12 @@
+---
+- name: Compile STREAM benchmark
+  ansible.builtin.command: >
+    {{ stream_cc }}
+    {{ stream_cflags }}
+    -DSTREAM_ARRAY_SIZE={{ stream_array_size }}
+    -DNTIMES={{ stream_ntimes }}
+    stream.c
+    -o stream
+  args:
+    chdir: "{{ stream_install_dir }}"
+    creates: "{{ stream_install_dir }}/stream"

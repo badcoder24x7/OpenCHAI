@@ -1,0 +1,76 @@
+# -------------------------------------------------
+# Unattended Install Kickstart
+# Managed by Ansible – DO NOT EDIT
+# -------------------------------------------------
+
+# 1. Install Mode
+text
+
+# 2. X Window Configuration
+skipx
+
+# 3. Install Source
+url --url={{ ks_baseos_url }}
+repo --name="AppStream" --baseurl={{ ks_appstream_url }}
+
+# 4. Localization
+keyboard --vckeymap={{ ks_keyboard }} --xlayouts='{{ ks_keyboard }}'
+lang {{ ks_lang }}
+timezone {{ ks_timezone }} --isUtc  --ntpservers={{ headnode_ip }}
+
+# 5. Network Configuration
+network --bootproto={{ ks_bootproto }} --device=link --activate
+
+# 6. Root Password
+rootpw --plaintext {{ ks_root_password }} --allow-ssh
+#rootpw --iscrypted $6$RcvB/GEcecFbrQLm$SIhv2kYGTV4NJfEIJhWx0ZOWZWY8mSI7K.yZTPQPGTUlPAFVRXeN2DBq3/c6tYIsp1rH0dzidJD7G6eOZGxbw0
+#user --groups=wheel --name=rudra_admin --password=$6$DWKmOQUsJ9KBBFu8$jifDehTJ/icBzZ03P61iOFwjkIAuRCJYGm5xeadkfd3yp3/YFkDEAoJq7nkECBayxh9zNYHz68WQf8cMBtAKw. --iscrypted --gecos="rudra_admin"
+
+
+# 7. Bootloader
+bootloader --location={{ ks_bootloader_location }} --append="{{ ks_bootloader_args }}"
+
+# 8. Fetch and include custom partitioning
+%pre
+curl -f -o /tmp/partition.cfg {{ ks_partition_url }}
+%end
+
+%include /tmp/partition.cfg
+
+# ------------------------------------------------------------
+# Security & Services Configuration
+# ------------------------------------------------------------
+
+# 9. Disable SELinux at install time (BEST PRACTICE)
+selinux --disabled
+
+# 10. Disable firewall
+firewall --disabled
+
+
+# ------------------------------------------------------------
+# Post-install configuration
+# ------------------------------------------------------------
+%post --log=/root/ks-post.log
+
+# Ensure firewalld is disabled (safety)
+systemctl disable --now firewalld || true
+
+# Ensure NetworkManager is enabled
+systemctl enable --now NetworkManager
+
+%end
+
+
+# 11. Post-install Reboot
+reboot
+
+# 12. Software Selection
+%packages
+@^{{ ks_environment }}
+@system-tools
+@standard
+{% for pkg in ks_extra_packages %}
+{{ pkg }}
+{% endfor %}
+%end

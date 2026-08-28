@@ -1,0 +1,35 @@
+# roles/slurm_web/tasks/slurmrestd.yml
+---
+
+- name: Ensure systemd override directory exists
+  ansible.builtin.file:
+    path: "{{ slurmrestd_override_dir }}"
+    state: directory
+    mode: "0755"
+
+
+- name: Configure slurmrestd systemd override
+  ansible.builtin.copy:
+    dest: "{{ slurmrestd_override_file }}"
+    mode: "0644"
+    content: |
+      [Service]
+      ExecStart=
+      Environment=
+      Environment="SLURM_JWT=daemon"
+      ExecStart=/usr/sbin/slurmrestd $SLURMRESTD_OPTIONS -a rest_auth/jwt unix:/run/slurmrestd/slurmrestd.socket
+      RuntimeDirectory=slurmrestd
+      RuntimeDirectoryMode=0755
+      User=slurmrestd
+      Group=slurmrestd
+      DynamicUser=yes
+  notify:
+    - daemon reload
+    - restart slurmrestd
+
+
+- name: Enable and start slurmrestd
+  ansible.builtin.service:
+    name: slurmrestd
+    state: started
+    enabled: yes

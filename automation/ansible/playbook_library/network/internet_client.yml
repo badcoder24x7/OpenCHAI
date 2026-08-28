@@ -1,0 +1,20 @@
+---
+- name: Configure internet on client
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+
+  vars:
+    primary_nameserver: "{{ headnode_ip }}"
+    fallback_dns:
+      search_domains:
+        - dns.server.in
+        - server.in
+      nameservers:
+        - 192.168.192.11
+        - 192.168.192.12
+
+
+  roles:
+    - "{{ roles_parent_path }}/network_lib/network_internet_client"

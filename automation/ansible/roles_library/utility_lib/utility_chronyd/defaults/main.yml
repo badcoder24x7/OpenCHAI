@@ -1,0 +1,30 @@
+---
+# ============================================================
+# Chrony Role Defaults
+# ============================================================
+
+chrony_mode: client
+
+# Packages to install
+required_packages:
+  - chrony
+
+chrony_conf_file: /etc/chrony.conf
+
+# NTP servers used by Chrony server
+chrony_ntp_servers: []
+
+# Internal Chrony servers used by clients
+chrony_server_hosts: []
+
+# Allow network access to Chrony server
+chrony_allowed_networks: []
+
+# Step system clock if offset is large
+chrony_makestep_threshold: 1.0
+chrony_makestep_limit: 3
+
+# Enable service after configuration
+chrony_service_enabled: true
+
+chrony_service_name: chronyd

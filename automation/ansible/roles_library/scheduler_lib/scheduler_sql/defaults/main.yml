@@ -1,0 +1,89 @@
+---
+# MariaDB
+slurmdb_mysql_service: mariadb
+
+# Slurm accounting DB
+slurmdb_name: slurm_acct_db
+slurmdb_user: slurm
+slurmdb_password: some_pass      # ⚠ override in vault/group_vars
+
+slurmdb_readonly_user: readonly
+slurmdb_readonly_password: some_pass
+
+# InnoDB tuning
+innodb_buffer_pool_size: 32768M
+innodb_log_file_size: 64M
+innodb_lock_wait_timeout: 900
+
+# storage packages:
+sql_packages:
+  -  mariadb
+  -  mariadb-common
+  -  mariadb-connector-c
+  -  mariadb-connector-c-devel
+  -  mariadb-devel
+  -  mariadb-errmsg
+  -  mariadb-server
+  -  mysql-selinux
+
+required_packages:
+  - gcc
+  - gcc-c++
+  - libgcc
+  - gcc-gfortran
+  - libcurl-devel
+  - libnl3-devel
+  - libnl3
+  - libdb-devel
+  - elfutils-devel
+  - iptables-devel
+  - libmnl
+  - glib2
+  - glib2-devel
+  - glibc-devel
+  - openssl-devel
+  - openssl
+  - libcurl
+  - python3
+  - python3-devel
+  - pkgconf-pkg-config
+  - tcl-devel
+  - zlib-devel
+  - pciutils-libs
+  - libusbx
+  - libusbx-devel
+  - fuse-libs
+  - libstdc++
+  - expat
+  - expat-devel
+  - systemd-libs
+  - systemd-devel
+  - tk
+    #  - perl
+  - perl-Test-Simple
+  - kernel-rpm-macros
+  - createrepo_c
+  - createrepo_c-libs
+  - make
+  - patch
+  - rpm-build
+  - autoconf
+  - automake
+  - libtool
+  - kernel-srpm-macros
+  - perl-File-Find
+  - numactl-devel
+  - numactl-libs
+  - numactl
+  - libquadmath-devel
+  - libquadmath
+  - hwloc-libs    
+  - hwloc-devel
+  - hwloc
+  - gcc-gfortran
+  - Lmod
+  - perl-deprecate
+  - mysql-selinux
+  - libgfortran-static
+  - libquadmath-static
+  - compat-libgfortran

@@ -1,0 +1,20 @@
+---
+- name: Setup Lmod and configure MODULEPATH
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+
+  vars:
+    util_rpm_base: "{{ rpm_stack_path }}/utilities_rpms"
+    dev_rpm_base : "{{ rpm_stack_path }}/developement_rpms"
+    modulepath_dir: "{{ modulepath_dir }}"
+
+
+  pre_tasks:
+    - name: Reset failed host state (if any)
+      meta: clear_host_errors
+
+
+  roles:
+    - "{{ roles_parent_path }}/utility_lib/utility_lmod"

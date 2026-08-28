@@ -1,0 +1,7 @@
+---
+# Host vars for fake — auto-generated, do not edit manually
+ansible_user: root
+ansible_host: 1.2.5.6
+ansible_port: 22
+ansible_password: "{{ vault_passwords[inventory_hostname] }}"
+ansible_become_pass: "{{ vault_passwords[inventory_hostname] }}"

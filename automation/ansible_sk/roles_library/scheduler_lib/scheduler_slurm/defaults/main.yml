@@ -1,0 +1,177 @@
+# Enable/disable reinstallation
+slurm_reinstall: false
+
+# PMIx version to install (directory must exist)
+pmix_version: "pmix-4.2.8"
+
+# Slurm version to install (directory must exist)
+slurm_version: "slurm-25-05-pmix-4-2-8"
+
+# Node role: master / compute / others
+slurm_node_role: "others"
+
+# Authentication packages
+
+auth_packages:
+  - hdf5
+  - http-parser
+  - hwloc-libs
+  - infiniband-diags
+  - libaec
+  - libibumad
+  - libjwt
+  - llhttp
+  - munge
+  - munge-libs
+  - perl
+  - perl-English
+  - perl-FindBin
+  - perl-Switch
+  - perl-autouse
+  - perl-deprecate
+  - python3-aiodns
+  - python3-aiohttp
+  - python3-aiosignal
+  - python3-async-timeout
+  - python3-attrs
+  - python3-babel
+  - python3-brotli
+  - python3-click
+  - python3-clustershell
+  - python3-decorator
+  - python3-deprecated
+  - python3-flask
+  - python3-frozenlist
+  - python3-itsdangerous
+  - python3-jinja2
+  - python3-jwt
+  - python3-ldap
+  - python3-markdown
+  - python3-markupsafe
+  - python3-multidict
+  - python3-pyasn1
+  - python3-pyasn1-modules
+  - python3-pycares
+  - python3-pytz
+  - python3-racksdb
+  - python3-redis
+  - python3-requests-toolbelt
+  - python3-wrapt
+  - python3-yarl
+  - python3-slurm-web
+  - python3-racksdb+web
+  - python3-rfl-authentication
+  - python3-rfl-authentication+jwt
+  - python3-rfl-authentication+ldap
+  - python3-rfl-core
+  - python3-rfl-log
+  - python3-rfl-permissions
+  - python3-rfl-settings
+  - python3-rfl-web
+
+auth_packagess:
+  - munge
+  - munge-devel
+  - munge-libs
+  - libjwt
+  - libjwt-devel
+  - s-nail
+  - mariadb-server
+  - perl-Switch
+  - libaec
+  - perl-autouse
+  - freeipmi
+  - hdf5-mpich
+  - libgfortran
+    #  - perl-deprecate
+  - libquadmath
+  - mpich
+  - hdf5
+  - http-parser
+  - nhc
+  - python3-markdown
+  - python3-clustershell 
+  - python3-redis 
+  - python3-aiohttp 
+  - python3-flask 
+  - perl 
+  - perl-FindBin 
+  - perl-autouse
+  - python3-slurm-web
+  - python3-racksdb                
+  - python3-racksdb+web            
+  - python3-rfl-authentication     
+  - python3-rfl-authentication+jwt 
+  - python3-rfl-authentication+ldap
+  - python3-rfl-core               
+  - python3-rfl-log                
+  - python3-rfl-permissions        
+  - python3-rfl-settings           
+  - python3-rfl-web                    
+
+# Define excluded packages per role
+slurm_excluded_packages:
+  master:
+    - slurm-slurmd     # exclude only the main slurm rpm
+  compute:
+    - slurm-slurmdbd
+    - slurm-slurmctld
+  mgmt:
+    - slurm-slurmctld
+    - slurm-slurmd
+  others:
+    - slurm-slurmdbd
+    - slurm-slurmctld
+    - slurm-slurmd
+
+
+# ============================================================
+# Slurm Global Configuration
+# ============================================================
+slurm_cluster_name: "openchai-hpc"
+
+
+# ============================================================
+# High Availability Configuration
+# ============================================================
+slurm_ha_enabled: true
+
+# ============================================================
+# Users and Groups
+# ============================================================
+slurm_user: slurm
+slurm_group: slurm
+slurm_uid: 900
+slurm_gid: 900
+
+munge_user: munge
+munge_group: munge
+munge_uid: 971
+munge_gid: 968
+
+# ============================================================
+# Paths
+# ============================================================
+slurm_conf_dir: /etc/slurm
+slurm_log_dir: /var/log/slurm
+slurm_state_dir: /var/spool/slurmctld
+slurm_share_dir: /var/share/slurm
+
+# ============================================================
+# Security
+# ============================================================
+munge_generate_key: true
+slurm_generate_jwt_key: true
+slurm_jwt_key_path: "{{ slurm_share_dir }}/statesave/jwt_hs256.key"
+
+# ============================================================
+# Services
+# ============================================================
+munge_service: munge
+slurmctld_service: slurmctld
+
+# ============================================================
+# Config Control
+# ============================================================
+slurm_replace_configs: true
+      

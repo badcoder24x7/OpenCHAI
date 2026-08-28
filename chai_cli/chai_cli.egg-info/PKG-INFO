@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: chai-cli
+Version: 0.1.0
+Summary: Command-line client for the OpenCHAI GUI backend API
+Requires-Python: >=3.8
+Requires-Dist: click<9,>=8.0
+Requires-Dist: requests<3,>=2.28
+Provides-Extra: live
+Requires-Dist: websockets<13,>=11; extra == "live"
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

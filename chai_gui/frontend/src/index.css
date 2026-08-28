@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * OpenCHAI Design System — base tokens
+ * Every color/spacing/radius/shadow decision for the app lives here or in
+ * tailwind.config.js. Pages must consume these classes rather than
+ * hand-rolling their own bg-/text-/border-* combinations, so Light and
+ * Dark mode stay in sync by construction instead of by page-by-page effort.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+@layer base {
+
+  body {
+    @apply bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased transition-colors duration-300;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-200 dark:bg-slate-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-400 dark:bg-slate-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500 dark:bg-slate-500;
+  }
+
+  /* Consistent, visible keyboard focus ring everywhere — buttons, links,
+     cards — not just form inputs. WCAG 2.4.7. */
+  a:focus-visible,
+  button:focus-visible,
+  [tabindex]:focus-visible {
+    @apply outline-none ring-2 ring-sky-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-950;
+  }
+}
+
+@layer components {
+
+  /* ── Surfaces ─────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-white dark:bg-slate-900
+         border border-slate-200 dark:border-slate-800
+         rounded-xl
+         p-6
+         shadow-sm
+         transition-colors duration-300;
+  }
+
+  .panel {
+    @apply bg-slate-100 dark:bg-slate-800/50
+         border border-slate-200 dark:border-slate-700
+         rounded-lg
+         transition-colors duration-300;
+  }
+
+  /* ── Buttons ──────────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500
+           text-white text-sm font-medium rounded-lg transition-colors
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2
+         bg-slate-200 dark:bg-slate-700
+         hover:bg-slate-300 dark:hover:bg-slate-600
+         text-slate-900 dark:text-slate-100
+         text-sm font-medium rounded-lg transition-colors
+         disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-red-700 hover:bg-red-600
+           text-white text-sm font-medium rounded-lg transition-colors
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-1.5
+         text-slate-600 dark:text-slate-400
+         hover:text-slate-900 dark:hover:text-slate-100
+         hover:bg-slate-200 dark:hover:bg-slate-800
+         text-sm font-medium rounded-lg transition-colors;
+  }
+
+  /* ── Forms ────────────────────────────────────────────────────────── */
+  .input {
+    @apply w-full
+         px-3 py-2
+         bg-white dark:bg-slate-800
+         border border-slate-300 dark:border-slate-700
+         rounded-lg
+         text-slate-900 dark:text-slate-100
+         placeholder-slate-500
+         text-sm
+         focus:outline-none
+         focus:ring-2
+         focus:ring-sky-500
+         disabled:opacity-60 disabled:cursor-not-allowed
+         transition-colors;
+  }
+  .label {
+    @apply block
+         text-xs
+         font-medium
+         text-slate-600 dark:text-slate-400
+         mb-1
+         uppercase
+         tracking-wide;
+  }
+
+  /* ── Feedback ─────────────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-green  { @apply badge bg-green-100 text-green-700 border border-green-300 dark:bg-green-900/60 dark:text-green-300 dark:border-green-800; }
+  .badge-red    { @apply badge bg-red-100 text-red-700 border border-red-300 dark:bg-red-900/60 dark:text-red-300 dark:border-red-800; }
+  .badge-yellow { @apply badge bg-yellow-100 text-yellow-700 border border-yellow-300 dark:bg-yellow-900/60 dark:text-yellow-300 dark:border-yellow-800; }
+  .badge-blue   { @apply badge bg-sky-100 text-sky-700 border border-sky-300 dark:bg-sky-900/60 dark:text-sky-300 dark:border-sky-800; }
+  .badge-gray   { @apply badge bg-slate-200 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700; }
+
+  .alert {
+    @apply flex items-start gap-2 p-3 rounded-lg border text-sm;
+  }
+  .alert-success { @apply alert bg-green-50 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-700/50 dark:text-green-300; }
+  .alert-error   { @apply alert bg-red-50 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-700/50 dark:text-red-300; }
+  .alert-warning { @apply alert bg-amber-50 border-amber-300 text-amber-800 dark:bg-amber-900/20 dark:border-amber-700/50 dark:text-amber-300; }
+  .alert-info    { @apply alert bg-sky-50 border-sky-300 text-sky-800 dark:bg-sky-900/20 dark:border-sky-700/50 dark:text-sky-300; }
+
+  /* ── Loading ──────────────────────────────────────────────────────── */
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-slate-300 dark:border-slate-700 border-t-sky-500;
+  }
+}

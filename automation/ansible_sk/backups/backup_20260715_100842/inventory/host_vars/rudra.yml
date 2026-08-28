@@ -1,0 +1,7 @@
+---
+# Host vars for rudra — auto-generated, do not edit manually
+ansible_user: aryanb
+ansible_host: 10.208.22.17
+ansible_port: 22
+ansible_password: "{{ vault_passwords[inventory_hostname] }}"
+ansible_become_pass: "{{ vault_passwords[inventory_hostname] }}"

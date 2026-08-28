@@ -1,0 +1,14 @@
+---
+# Main entry for NFS client role
+
+- name: Reload systemd (safe)
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+  failed_when: false
+
+- name: Install NFS client packages
+  ansible.builtin.import_tasks: nfs_packages_install.yml
+
+- name: Configure and mount NFS client
+  ansible.builtin.import_tasks: nfs_client_mount.yml

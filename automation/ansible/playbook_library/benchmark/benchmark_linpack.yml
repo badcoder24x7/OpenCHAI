@@ -1,0 +1,22 @@
+---
+- name: Run Intel MKL Linpack Benchmark
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+
+  vars:
+    linpack_intel_setvars: /home/apps/intel/setvars.sh                        # Intel environment
+    linpack_dir: /home/apps/intel/mkl/2025.3/share/mkl/benchmarks/mp_linpack  # Linpack benchmark directory
+    linpack_enable_logging: true   # true | false                             # Enable / disable Linpack logging
+    linpack_log_base_dir: /home/apps/intel/mkl/2025.3/share/mkl/benchmarks/mp_linpack/logs
+    linpack_problem_size: "50000"
+    linpack_testmode: check
+
+  pre_tasks:
+    - name: Reset failed host state (if any)
+      meta: clear_host_errors
+
+
+  roles:
+    - "{{ roles_parent_path }}/benchmark_lib/benchmark_linpack"

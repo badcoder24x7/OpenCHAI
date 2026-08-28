@@ -1,0 +1,59 @@
+---
+# tasks/create_xcat_drbd_dirs.yml
+
+# -------------------------------------------------------------
+# Detect if /drbd is mounted
+# -------------------------------------------------------------
+- name: Check if /drbd is mounted
+  command: mountpoint -q /drbd
+  register: drbd_mount_check
+  failed_when: false
+  changed_when: false
+
+# -------------------------------------------------------------
+# Create directories under /drbd/ only if it is mounted
+# -------------------------------------------------------------
+- name: Create required DRBD directories for xCAT
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  loop:
+    - /drbd/cont_env
+    - /drbd/xcatdata
+    - /drbd/var_log_xcat
+    - /drbd/xcat_mysqldata
+    - /drbd/xcatcont_sshkey
+    - /drbd/xcatcont_sshkey/.ssh
+  when: drbd_mount_check.rc == 0
+  tags:
+    - drbd_dirs
+
+# -------------------------------------------------------------
+# List top-level DRBD directory (optional)
+# -------------------------------------------------------------
+- name: List contents of /drbd
+  command: ls -l /drbd
+  register: drbd_dirs
+  changed_when: false
+  when: drbd_mount_check.rc == 0
+
+# -------------------------------------------------------------
+# Show the result
+# -------------------------------------------------------------
+- name: Display /drbd directory contents
+  debug:
+    var: drbd_dirs.stdout_lines
+  when: drbd_mount_check.rc == 0
+
+# -------------------------------------------------------------
+# If /drbd is NOT mounted, show a friendly message
+# -------------------------------------------------------------
+- name: Skip message when /drbd is not mounted
+  debug:
+    msg: "⛔ Skipping: /drbd is not mounted on this node."
+  when: drbd_mount_check.rc != 0
+
+

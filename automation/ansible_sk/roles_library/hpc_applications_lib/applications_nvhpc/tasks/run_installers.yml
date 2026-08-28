@@ -1,0 +1,110 @@
+---
+# =====================
+# tasks/main.yml
+# =====================
+
+- name: Check if RPM directory exists
+  stat:
+    path: "{{ nvhpc_source_dir }}"
+  register: bin_dir
+
+
+- name: Fail if RPM directory does not exist
+  fail:
+    msg: "RPM directory {{ nvhpc_source_dir }} does not exist"
+  when: not bin_dir.stat.exists
+
+
+# -------------------------------------------------
+# Check if NVIDIA HPC SDK RPMs are already installed
+# -------------------------------------------------
+- name: Check installed NVIDIA HPC SDK RPMs
+  command: >
+    rpm -q {{ item | regex_replace('\.rpm$', '') }}
+  register: rpm_check
+  failed_when: false
+  changed_when: false
+  loop: "{{ nvhpc_rpms }}"
+
+
+# -------------------------------------------------
+# Install missing RPMs only
+- name: Install NVIDIA HPC SDK RPMs if missing
+  command: >
+    rpm -Uvh {{ bin_dir_path }}/nvhpc_rpms/{{ item.item }}
+  when: item.rc != 0
+  loop: "{{ rpm_check.results }}"
+  ignore_errors: true
+
+
+
+# =================================================
+# Move NVIDIA stack and modulefiles safely
+# =================================================
+
+- name: Ensure NVIDIA destination directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ application_base_dir }}/nvidia"
+    - "{{ application_base_dir }}/modulefiles/mldl"
+
+# -------------------------------------------------
+# Move /opt/nvidia → {{ application_base_dir }}/nvidia
+# -------------------------------------------------
+- name: Check if NVIDIA already moved
+  ansible.builtin.stat:
+    path: "{{ application_base_dir }}/nvidia/hpc_sdk"
+  register: nvidia_dest_stat
+
+- name: Move NVIDIA directory
+  ansible.builtin.command: mv /opt/nvidia {{ application_base_dir }}/
+  when:
+    - not nvidia_dest_stat.stat.exists
+    - ansible_facts['os_family'] == "RedHat"
+
+# -------------------------------------------------
+# Move modulefiles into central modulefiles tree
+# -------------------------------------------------
+- name: Find NVIDIA modulefiles directories
+  ansible.builtin.find:
+    paths: "{{ application_base_dir }}/nvidia/hpc_sdk/modulefiles"
+    file_type: directory
+    depth: 1
+  register: nvhpc_module_dirs
+
+- name: Check destination modulefile directories
+  ansible.builtin.stat:
+    path: "{{ application_base_dir }}/modulefiles/mldl/{{ item.path | basename }}"
+  loop: "{{ nvhpc_module_dirs.files }}"
+  register: nvhpc_module_dest_stats
+
+- name: Move NVIDIA modulefiles safely
+  ansible.builtin.command: >
+    mv {{ item.item.path }} {{ application_base_dir }}/modulefiles/mldl/
+  when: not item.stat.exists
+  loop: "{{ nvhpc_module_dest_stats.results }}"
+
+
+
+
+# =================================================
+# Fix NVIDIA modulefiles hardcoded paths (FINAL)
+# =================================================
+
+- name: Find ALL NVIDIA modulefiles (no extension)
+  ansible.builtin.find:
+    paths: "{{ application_base_dir }}/modulefiles/mldl"
+    recurse: yes
+    file_type: file
+  register: nvhpc_modulefiles
+
+- name: Replace hardcoded NVHPC paths in modulefiles
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: "/opt/nvidia/hpc_sdk"
+    replace: "{{ application_base_dir }}/nvidia/hpc_sdk"
+  loop: "{{ nvhpc_modulefiles.files }}"
+  when: nvhpc_modulefiles.files | length > 0

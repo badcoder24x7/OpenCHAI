@@ -1,0 +1,209 @@
+---
+# =========================================================
+# Detect OS Version
+# =========================================================
+
+- name: Detect OS major version
+  ansible.builtin.set_fact:
+    os_major_version: "{{ ansible_distribution_major_version }}"
+
+# =========================================================
+# Configure Shell
+# =========================================================
+
+- name: Ensure HISTTIMEFORMAT is configured
+  ansible.builtin.lineinfile:
+    path: /etc/bashrc
+    regexp: '^export HISTTIMEFORMAT='
+    line: "{{ histtimeformat_line }}"
+    insertafter: EOF
+
+# =========================================================
+# Install Development Tools
+# =========================================================
+
+- name: Install Development Tools
+  ansible.builtin.yum:
+    name: "@Development Tools"
+    state: present
+  ignore_errors: true
+
+# =========================================================
+# Remove old environment-modules
+# =========================================================
+
+- name: Remove old environment-modules
+  ansible.builtin.yum:
+    name: "{{ old_modules_package }}"
+    state: absent
+    autoremove: false
+  ignore_errors: true
+
+# =========================================================
+# Ensure required packages are installed
+# Local RPM -> Retry -> DNF
+# =========================================================
+
+- name: Gather installed packages
+  ansible.builtin.command:
+    cmd: rpm -qa --qf '%{NAME}\n'
+  register: installed_rpms
+  changed_when: false
+
+- name: Determine missing packages
+  ansible.builtin.set_fact:
+    missing_packages: "{{ required_packages | difference(installed_rpms.stdout_lines) }}"
+
+- name: Debug missing packages
+  ansible.builtin.debug:
+    var: missing_packages
+
+# ---------------------------------------------------------
+# Locate RPMs
+# ---------------------------------------------------------
+
+- name: Find local RPMs
+  ansible.builtin.find:
+    paths:
+      - "{{ dev_rpm_base }}"
+      - "{{ util_rpm_base }}"
+    patterns: "*.rpm"
+    recurse: true
+    file_type: file
+  register: local_rpms
+  when: missing_packages | length > 0
+
+# ---------------------------------------------------------
+# Match RPMs with package names
+# ---------------------------------------------------------
+
+- name: Query RPM package names
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -qp
+      - --queryformat
+      - "%{NAME}"
+      - "{{ item.path }}"
+  loop: "{{ local_rpms.files }}"
+  register: rpm_query
+  changed_when: false
+  failed_when: false
+  when: missing_packages | length > 0
+
+# ---------------------------------------------------------
+# Build RPM transaction
+# ---------------------------------------------------------
+
+- name: Build RPM transaction
+  ansible.builtin.set_fact:
+    rpm_transaction: >-
+      {{
+        rpm_query.results
+        | selectattr('rc','eq',0)
+        | selectattr('stdout','in',missing_packages)
+        | map(attribute='item.path')
+        | list
+      }}
+
+- name: Debug RPM transaction
+  ansible.builtin.debug:
+    msg:
+      missing_packages: "{{ missing_packages }}"
+      rpm_files: "{{ rpm_transaction | map('basename') | list }}"
+
+# ---------------------------------------------------------
+# Install RPMs in one transaction
+# ---------------------------------------------------------
+
+- name: Install local RPMs
+  ansible.builtin.command:
+    argv: "{{ ['rpm','-Uvh','--force'] + rpm_transaction }}"
+  register: rpm_install
+  failed_when: false
+  changed_when: rpm_install.rc == 0
+  when: rpm_transaction | length > 0
+
+# ---------------------------------------------------------
+# Recheck packages
+# ---------------------------------------------------------
+
+- name: Gather installed packages again
+  ansible.builtin.command:
+    cmd: rpm -qa --qf '%{NAME}\n'
+  register: installed_after
+  changed_when: false
+
+- name: Determine remaining packages
+  ansible.builtin.set_fact:
+    remaining_packages: "{{ required_packages | difference(installed_after.stdout_lines) }}"
+
+# ---------------------------------------------------------
+# Retry local installation
+# ---------------------------------------------------------
+
+- name: Build retry RPM transaction
+  ansible.builtin.set_fact:
+    retry_transaction: >-
+      {{
+        rpm_query.results
+        | selectattr('rc','eq',0)
+        | selectattr('stdout','in',remaining_packages)
+        | map(attribute='item.path')
+        | list
+      }}
+  when: remaining_packages | length > 0
+
+- name: Retry local RPM installation
+  ansible.builtin.command:
+    argv: "{{ ['rpm', '-Uvh', '--force'] + retry_transaction }}"
+  register: retry_install
+  failed_when: false
+  changed_when: retry_install.rc == 0
+  when:
+    - remaining_packages | length > 0
+    - (retry_transaction | default([])) | length > 0
+
+# ---------------------------------------------------------
+# Final verification
+# ---------------------------------------------------------
+
+- name: Gather final installed packages
+  ansible.builtin.command:
+    cmd: rpm -qa --qf '%{NAME}\n'
+  register: installed_final
+  changed_when: false
+
+- name: Determine final missing packages
+  ansible.builtin.set_fact:
+    final_missing_packages: "{{ required_packages | difference(installed_final.stdout_lines) }}"
+
+- name: Debug final missing packages
+  ansible.builtin.debug:
+    var: final_missing_packages
+
+# ---------------------------------------------------------
+# Online fallback
+# ---------------------------------------------------------
+
+- name: Install remaining packages from repositories
+  ansible.builtin.yum:
+    name: "{{ final_missing_packages }}"
+    state: present
+  when: final_missing_packages | length > 0
+  ignore_errors: true
+
+# =========================================================
+# Configure MODULEPATH
+# =========================================================
+
+- name: Configure MODULEPATH
+  ansible.builtin.copy:
+    dest: /etc/profile.d/00-modulepath.sh
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [ -z "$MODULEPATH" ] &&
+      [ "$(readlink /etc/alternatives/modules.sh)" = "/usr/share/lmod/lmod/init/profile" -o -f /etc/profile.d/z00_lmod.sh ] &&
+      export MODULEPATH={{ modulepath_dir }}:/etc/modulefiles || :

@@ -1,0 +1,20 @@
+---
+# ============================================================
+# Chrony Client Configuration
+# ============================================================
+
+- name: Validate Chrony server list
+  ansible.builtin.assert:
+    that:
+      - chrony_server_hosts | length > 0
+    fail_msg: >
+      chrony_server_hosts must contain at least one Chrony server.
+
+- name: Deploy Chrony client configuration
+  ansible.builtin.template:
+    src: chrony-client.conf.j2
+    dest: "{{ chrony_conf_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Chrony

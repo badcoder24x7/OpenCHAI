@@ -1,0 +1,450 @@
+# =========================================================
+# Base Repositories
+# =========================================================
+
+- name: Install EPEL release
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+  failed_when: false
+
+- name: Enable CRB or PowerTools repository
+  ansible.builtin.shell: |
+    dnf config-manager --set-enabled crb ||
+    dnf config-manager --set-enabled powertools
+  args:
+    executable: /bin/bash
+  changed_when: false
+  failed_when: false
+
+
+
+# =========================================================
+# Authentication Packages
+# All local RPMs in ONE transaction → Online fallback
+# =========================================================
+
+- name: Check installed authentication packages
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -q
+      - "{{ item }}"
+  loop: "{{ auth_packages }}"
+  register: auth_check
+  failed_when: false
+  changed_when: false
+
+- name: Identify missing authentication packages
+  ansible.builtin.set_fact:
+    missing_auth_pkgs: >-
+      {{
+        auth_check.results
+        | selectattr('rc', 'ne', 0)
+        | map(attribute='item')
+        | list
+      }}
+
+# ---------------------------------------------------------
+# Find every RPM in the curated auth directory
+# ---------------------------------------------------------
+
+- name: Locate all local authentication RPMs
+  ansible.builtin.find:
+    paths: "{{ slurm_rpm_base }}/auth"
+    patterns: "*.rpm"
+    file_type: file
+    recurse: false
+  register: auth_rpm_files
+  when: missing_auth_pkgs | length > 0
+
+- name: Build complete local authentication RPM transaction
+  ansible.builtin.set_fact:
+    auth_local_rpm_paths: >-
+      {{
+        auth_rpm_files.files | default([])
+        | map(attribute='path')
+        | list
+      }}
+  when: missing_auth_pkgs | length > 0
+
+- name: Debug authentication RPM transaction
+  ansible.builtin.debug:
+    msg:
+      missing_packages: "{{ missing_auth_pkgs }}"
+      rpm_count: "{{ auth_local_rpm_paths | default([]) | length }}"
+      local_rpms: >-
+        {{
+          auth_local_rpm_paths | default([])
+          | map('basename')
+          | list
+        }}
+  when: missing_auth_pkgs | length > 0
+
+# ---------------------------------------------------------
+# Install all local auth RPMs in ONE rpm transaction
+# ---------------------------------------------------------
+
+- name: Install all local authentication RPMs in one transaction
+  ansible.builtin.command:
+    argv: "{{ ['rpm', '-Uvh'] + auth_local_rpm_paths }}"
+  register: auth_rpm_install
+  failed_when: false
+  changed_when: auth_rpm_install.rc == 0
+  when:
+    - missing_auth_pkgs | length > 0
+    - auth_local_rpm_paths | default([]) | length > 0
+
+- name: Debug local authentication RPM result
+  ansible.builtin.debug:
+    msg:
+      rc: "{{ auth_rpm_install.rc | default('not-run') }}"
+      stdout: "{{ auth_rpm_install.stdout | default('') }}"
+      stderr: "{{ auth_rpm_install.stderr | default('') }}"
+  when: auth_rpm_install is defined
+
+# ---------------------------------------------------------
+# Recheck only required packages
+# ---------------------------------------------------------
+
+- name: Recheck authentication packages
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -q
+      - "{{ item }}"
+  loop: "{{ missing_auth_pkgs }}"
+  register: auth_post_local
+  failed_when: false
+  changed_when: false
+  when: missing_auth_pkgs | length > 0
+
+- name: Identify authentication packages still missing
+  ansible.builtin.set_fact:
+    still_missing_auth_pkgs: >-
+      {{
+        auth_post_local.results | default([])
+        | selectattr('rc', 'ne', 0)
+        | map(attribute='item')
+        | list
+      }}
+
+- name: Debug packages requiring online fallback
+  ansible.builtin.debug:
+    var: still_missing_auth_pkgs
+
+# ---------------------------------------------------------
+# Online fallback
+# ---------------------------------------------------------
+
+- name: Install remaining authentication packages online
+  ansible.builtin.dnf:
+    name: "{{ still_missing_auth_pkgs }}"
+    state: present
+  when: still_missing_auth_pkgs | length > 0
+  ignore_errors: true
+
+    ##################################################
+# =========================================================
+# Authentication Packages
+# Local RPM first → Online DNF fallback
+# =========================================================
+
+- name: Check installed authentication packages
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -q
+      - "{{ item }}"
+  loop: "{{ auth_packages }}"
+  register: auth_check
+  failed_when: false
+  changed_when: false
+
+
+- name: Identify missing authentication packages
+  ansible.builtin.set_fact:
+    missing_auth_pkgs: >-
+      {{
+        auth_check.results
+        | selectattr('rc', 'ne', 0)
+        | map(attribute='item')
+        | list
+      }}
+
+
+# =========================================================
+# Find Local Authentication RPMs
+# =========================================================
+
+- name: Locate local authentication RPMs
+  ansible.builtin.find:
+    paths: "{{ slurm_rpm_base }}/auth"
+    patterns: "*.rpm"
+    file_type: file
+    recurse: false
+  register: auth_rpm_files
+  when: missing_auth_pkgs | length > 0
+
+
+# =========================================================
+# Query Actual Package Names from RPM Files
+# =========================================================
+
+- name: Query package names from local authentication RPMs
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -qp
+      - --queryformat
+      - "%{NAME}"
+      - "{{ item.path }}"
+  loop: "{{ auth_rpm_files.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: auth_rpm_query
+  failed_when: false
+  changed_when: false
+  when: missing_auth_pkgs | length > 0
+
+
+# =========================================================
+# Build Required Local RPM List
+# =========================================================
+
+- name: Build local authentication RPM installation list
+  ansible.builtin.set_fact:
+    auth_local_rpm_paths: >-
+      {{
+        auth_rpm_query.results | default([])
+        | selectattr('rc', 'eq', 0)
+        | selectattr('stdout', 'in', missing_auth_pkgs)
+        | map(attribute='item.path')
+        | list
+      }}
+
+
+- name: Debug authentication RPM transaction
+  ansible.builtin.debug:
+    msg:
+      missing_packages: "{{ missing_auth_pkgs }}"
+      local_rpms: "{{ auth_local_rpm_paths | map('basename') | list }}"
+
+
+# =========================================================
+# Install ALL Required Local RPMs in ONE Transaction
+# =========================================================
+
+- name: Install required authentication RPMs in one transaction
+  ansible.builtin.command:
+    argv: "{{ ['rpm', '-Uvh'] + auth_local_rpm_paths }}"
+  register: auth_rpm_install
+  failed_when: false
+  changed_when: auth_rpm_install.rc == 0
+  when: auth_local_rpm_paths | length > 0
+
+
+# =========================================================
+# Recheck Required Packages
+# =========================================================
+
+- name: Recheck authentication packages
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -q
+      - "{{ item }}"
+  loop: "{{ missing_auth_pkgs }}"
+  register: auth_post_local
+  failed_when: false
+  changed_when: false
+  when: missing_auth_pkgs | length > 0
+
+
+- name: Identify authentication packages still missing
+  ansible.builtin.set_fact:
+    still_missing_auth_pkgs: >-
+      {{
+        auth_post_local.results | default([])
+        | selectattr('rc', 'ne', 0)
+        | map(attribute='item')
+        | list
+      }}
+
+
+# =========================================================
+# Online Fallback
+# =========================================================
+
+- name: Install remaining authentication packages online
+  ansible.builtin.dnf:
+    name: "{{ still_missing_auth_pkgs }}"
+    state: present
+  when: still_missing_auth_pkgs | length > 0
+  ignore_errors: true    
+
+# =========================================================
+# Find Slurm RPMs
+# =========================================================
+
+- name: Find Slurm RPMs
+  ansible.builtin.find:
+    paths: "{{ slurm_rpm_base }}/{{ slurm_version }}"
+    patterns: "*.rpm"
+    file_type: file
+    recurse: false
+  register: slurm_rpm_files
+
+- name: Initialize Slurm RPM map
+  ansible.builtin.set_fact:
+    slurm_rpm_map: {}
+
+- name: Build Slurm RPM map
+  ansible.builtin.set_fact:
+    slurm_rpm_map: >-
+      {{
+        slurm_rpm_map
+        | combine({
+            (
+              item.path
+              | basename
+              | regex_replace('-[0-9].*$', '')
+            ): item.path
+          })
+      }}
+  loop: "{{ slurm_rpm_files.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+
+# =========================================================
+# Role-Aware Package Selection
+# =========================================================
+
+- name: Resolve excluded Slurm packages for role
+  ansible.builtin.set_fact:
+    slurm_excluded_for_role: >-
+      {{
+        slurm_excluded_packages.get(
+          slurm_node_role,
+          slurm_excluded_packages.get('others', [])
+        )
+      }}
+
+- name: Build Slurm installation list for role
+  ansible.builtin.set_fact:
+    slurm_install_list: >-
+      {{
+        slurm_rpm_map
+        | dict2items
+        | rejectattr('key', 'in', slurm_excluded_for_role)
+        | map(attribute='value')
+        | list
+      }}
+
+- name: Debug Slurm package resolution
+  ansible.builtin.debug:
+    msg:
+      node_role: "{{ slurm_node_role }}"
+      excluded_packages: "{{ slurm_excluded_for_role }}"
+      will_install: "{{ slurm_install_list | map('basename') | list }}"
+
+
+# =========================================================
+# Local Slurm Dependencies
+# RPM command first
+# =========================================================
+
+# =========================================================
+# Method 1: All Local RPMs in One Transaction
+# =========================================================
+
+- name: Build complete local RPM transaction
+  ansible.builtin.set_fact:
+    slurm_local_transaction: >-
+      {{
+        (
+          slurm_dependency_rpms.files
+          | default([])
+          | map(attribute='path')
+          | list
+        )
+        +
+        (
+          slurm_install_list
+          | default([])
+        )
+      }}
+
+- name: Install all local RPMs in one transaction
+  ansible.builtin.command:
+    argv: "{{ ['rpm', '-Uvh'] + slurm_local_transaction }}"
+  register: slurm_local_install
+  failed_when: false
+  changed_when: slurm_local_install.rc == 0
+  when: slurm_local_transaction | length > 0
+
+
+# =========================================================
+# Method 2: DNF Fallback
+# Resolves remaining dependencies from repositories
+# =========================================================
+
+- name: Install selected Slurm RPMs with DNF fallback
+  ansible.builtin.dnf:
+    name: "{{ slurm_install_list }}"
+    state: present
+    disable_gpg_check: true
+  register: slurm_dnf_install
+  when:
+    - slurm_install_list | length > 0
+    - slurm_local_install.rc | default(1) != 0
+  ignore_errors: true
+
+- name: Locate local Slurm dependency RPMs
+  ansible.builtin.find:
+    paths: "{{ slurm_rpm_base }}/{{ slurm_version }}"
+    patterns: "*.rpm"
+    file_type: file
+    recurse: false
+  register: slurm_dependency_rpms
+
+- name: Install local Slurm dependencies - first pass
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -Uvh
+      - "{{ item.path }}"
+  loop: "{{ slurm_dependency_rpms.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: slurm_dependency_install
+  failed_when: false
+  changed_when: slurm_dependency_install.rc == 0
+
+- name: Install local Slurm dependencies - second pass
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -Uvh
+      - "{{ item.path }}"
+  loop: "{{ slurm_dependency_rpms.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: slurm_dependency_retry
+  failed_when: false
+  changed_when: slurm_dependency_retry.rc == 0
+
+
+# =========================================================
+# Install Role-Aware Slurm Packages
+# =========================================================
+
+- name: Install Slurm packages
+  ansible.builtin.dnf:
+    name: "{{ slurm_install_list }}"
+    state: present
+    disable_gpg_check: true
+  register: slurm_install_result
+  failed_when: false
+  when: slurm_install_list | length > 0

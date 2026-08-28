@@ -1,0 +1,62 @@
+---
+# tasks/main.yml - Generate xCAT container environment file
+# Runs only if /drbd is mounted
+
+# -------------------------------------------------------------
+# Detect if /drbd is mounted
+# -------------------------------------------------------------
+- name: Check if /drbd is mounted
+  command: mountpoint -q /drbd
+  register: drbd_mount_check
+  failed_when: false
+  changed_when: false
+
+
+- name: "Proceed only if /drbd is mounted"
+  when: drbd_mount_check.rc == 0
+  block:
+
+    - name: "Gather facts to auto-detect network details"
+      setup:
+        gather_subset:
+          - network
+
+    - name: "Auto-detect system timezone"
+      command: timedatectl
+      register: timedatectl_out
+
+    - name: "Extract timezone from timedatectl output"
+      set_fact:
+        detected_timezone: "{{ timedatectl_out.stdout | regex_search('Time zone:\\s+([^\\s]+)', '\\1') | first | default('Asia/Kolkata') }}"
+
+    - name: "Auto-detect private network parameters"
+      set_fact:
+        private_interface: "{{ ansible_default_ipv4.interface }}"
+        ip_address: "{{ ansible_default_ipv4.address }}"
+        ip_net: "{{ ansible_default_ipv4.network | default('10.1.0.0') }}"
+        ip_mask: "{{ ansible_default_ipv4.netmask | default('255.255.0.0') }}"
+        object_name: "{{ (ansible_default_ipv4.network | default('10.1.0.0')).replace('.', '_') }}-{{ (ansible_default_ipv4.netmask | default('255.255.0.0')).replace('.', '_') }}"
+        ib_net: "{{ ansible_all_ipv4_addresses | select('match', '^10\\.5\\.') | list | first | default('10.5.0.0') | regex_replace('\\.\\d+$', '.0') }}"
+        ib_mask: "255.255.0.0"
+
+    - name: "Generate dev.env from template"
+      ansible.builtin.template:
+        src: dev.env.j2
+        dest: /drbd/cont_env/dev.env
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: "Display confirmation"
+      debug:
+        msg: |
+          ✅ .env file successfully generated at /drbd/cont_env/dev.env
+
+          Auto-detected values:
+            Timezone: {{ detected_timezone }}
+            IP Network: {{ ip_net }}
+            Subnet Mask: {{ ip_mask }}
+            Object Name: {{ object_name }}
+            IB Net: {{ ib_net }}
+            IB Mask: {{ ib_mask }}
+

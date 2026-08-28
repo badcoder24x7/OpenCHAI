@@ -1,0 +1,17 @@
+stream_profile_cmds:
+
+  all:
+    threads: "{{ ansible_processor_vcpus }}"
+    command: "./stream"
+
+  interleave:
+    threads: "{{ ansible_processor_vcpus }}"
+    command: "numactl --interleave=all ./stream"
+
+  socket0:
+    threads: "{{ ansible_processor_vcpus // ansible_numa_nodes }}"
+    command: "numactl --cpunodebind=0 --membind=0 ./stream"
+
+  socket1:
+    threads: "{{ ansible_processor_vcpus // ansible_numa_nodes }}"
+    command: "numactl --cpunodebind=1 --membind=1 ./stream"

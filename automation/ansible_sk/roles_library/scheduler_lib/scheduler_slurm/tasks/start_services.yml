@@ -1,0 +1,48 @@
+---
+
+# Validate syntax of slurm.conf using slurmctld --test
+#- name: Validate slurm.conf syntax (only on master)
+#  ansible.builtin.command: "slurmctld -C -f /etc/slurm/slurm.conf"
+#  register: slurm_validate
+#  changed_when: false
+#  failed_when: slurm_validate.rc != 0
+#  when: slurm_node_role == "master"
+
+# Start Slurm controller (master only)
+- name: Enable and start Munge (master only)
+  ansible.builtin.systemd:
+    name: munge
+    state: started
+    enabled: true
+
+# Start Slurm compute daemon (compute nodes only)
+- name: Enable and start slurmd (compute only)
+  ansible.builtin.systemd:
+    name: slurmd
+    state: started
+    enabled: true
+  when: slurm_node_role == "compute"
+
+# Start Slurm controller (master only)
+- name: Enable and start slurmctld (master only)
+  ansible.builtin.systemd:
+    name: slurmctld
+    state: started
+    enabled: true
+  when: slurm_node_role == "master"
+
+# Start Slurm controller (master only)
+- name: Enable and start slurmctld (master only)
+  ansible.builtin.systemd:
+    name: slurmctld
+    state: restarted
+    enabled: true
+  when: slurm_node_role == "compute"
+
+# Optional: For "others" group (login or utility nodes)
+- name: Enable and start slurmdbd (db only)
+  ansible.builtin.systemd:
+    name: slurmdbd
+    state: started
+    enabled: true
+  when: slurm_node_role == "mgmt"

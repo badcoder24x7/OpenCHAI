@@ -1,0 +1,127 @@
+---
+# tasks/main.yml - xCAT Local Host Machine Setup
+
+# Expected variables (define in defaults/main.yml or inventory):
+# xcat_version: "latest"
+# xcat_reporoot: "https://xcat.org/files/xcat/repos/yum"
+# xcat_baseos: "rh8"
+# xcat_vip_ip: "10.x.x.x"
+
+###############################################################
+# 1. Install prerequisite packages
+###############################################################
+
+# --------------------------------------
+# Enable EPEL and CRB repositories
+# --------------------------------------
+- name: Enable EPEL repository
+  yum:
+    name: epel-release
+    state: present
+
+- name: Enable EPEL repo explicitly
+  command: dnf config-manager --set-enabled epel
+  args:
+    creates: /etc/yum.repos.d/epel.repo
+
+- name: Enable CRB repository
+  command: dnf config-manager --set-enabled crb
+  args:
+    creates: /etc/yum.repos.d/rocky-crb.repo
+
+# --------------------------------------
+# Install required packages
+# --------------------------------------
+- name: Install base utilities and perl dependencies
+  yum:
+    name:
+      - wget
+      - which
+      - perl-IO-Tty
+      - perl-Crypt-CBC
+    enablerepo:
+      - epel
+      - crb
+    state: present
+
+
+###############################################################
+# 2. Determine xCAT core repo type
+###############################################################
+
+- name: "Determine xCAT core repo type (core-snap only for devel)"
+  set_fact:
+    xcat_core_type: "{{ 'core-snap' if xcat_version == 'devel' else 'xcat-core' }}"
+
+###############################################################
+# 3. Configure Yum Repository Files
+###############################################################
+
+- name: "Determine xCAT core repo type"
+  set_fact:
+    xcat_core_type: "{{ 'core-snap' if (xcat_version|default('')) == 'devel' else 'xcat-core' }}"
+
+- name: "Download xCAT core repo file"
+  get_url:
+    url: "{{ xcat_reporoot }}/{{ xcat_version }}/{{ xcat_core_type }}/xcat-core.repo"
+    dest: /etc/yum.repos.d/xcat-core.repo
+    mode: "0644"
+    force: yes         # overwrite if changed
+    validate_certs: no
+  register: xcat_core_repo
+  retries: 3
+  delay: 5
+  until: xcat_core_repo is succeeded
+
+- name: "Download xCAT dependency repo file"
+  get_url:
+    url: "{{ xcat_reporoot }}/{{ xcat_version }}/xcat-dep/{{ xcat_baseos }}/{{ os_arch }}/xcat-dep.repo"
+    dest: /etc/yum.repos.d/xcat-dep.repo
+    mode: "0644"
+    force: yes
+    validate_certs: no
+  register: xcat_dep_repo
+  retries: 3
+  delay: 5
+  until: xcat_dep_repo is succeeded
+
+###############################################################
+# 4. Install xCAT packages on host
+###############################################################
+
+- name: "Install perl-xCAT-* packages"
+  yum:
+    name: "perl-xCAT-*"
+    state: present
+
+###############################################################
+# 5. Copy xCAT /etc/profile.d environment script
+###############################################################
+
+- name: "Copy xcat.sh profile script"
+  copy:
+    src: xcat.sh        # This must exist in role: files/xcat.sh
+    dest: /etc/profile.d/xcat.sh
+    mode: "0755"
+
+###############################################################
+# 6. Create .xcat key symlink for command execution
+###############################################################
+
+- name: Create xCAT config symlink for root
+  file:
+    src: /drbd/xcatdata/.xcat
+    dest: /root/.xcat
+    state: link
+    force: yes
+
+
+###############################################################
+# 7. Source environment scripts for current execution
+###############################################################
+
+- name: "Source xcat.sh for the current session"
+  shell: source /etc/profile.d/xcat.sh
+  args:
+    executable: /bin/bash
+  changed_when: false

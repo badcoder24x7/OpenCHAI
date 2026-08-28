@@ -1,0 +1,83 @@
+---
+
+- include_tasks: install_packages.yml
+
+# =========================================================
+# Install Spack
+# Git clone -> Local tarball fallback
+# =========================================================
+
+- name: Install Spack
+  block:
+
+    - name: Clone Spack repository
+      ansible.builtin.git:
+        repo: "{{ spack_git_repo }}"
+        dest: "{{ application_base_dir }}/spack"
+        version: "{{ spack_commit }}"
+        update: false
+
+  rescue:
+
+    - name: Display fallback message
+      ansible.builtin.debug:
+        msg: >
+          Unable to clone Spack from GitHub.
+          Falling back to local archive.
+
+    - name: Ensure Spack destination exists
+      ansible.builtin.file:
+        path: "{{ application_base_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Extract local Spack archive
+      ansible.builtin.unarchive:
+        src: "{{ spack_hpc_apps_dir_path }}/spack/spack-1.2.0.tar.gz"
+        dest: "{{ application_base_dir }}"
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+
+# =========================================================
+# Register external Slurm
+# =========================================================
+
+- name: Register system Slurm as external in Spack
+  ansible.builtin.shell: |
+    source {{ application_base_dir }}/spack/share/spack/setup-env.sh
+    spack external find --not-buildable slurm
+  args:
+    executable: /bin/bash
+  environment:
+    SPACK_ROOT: "{{ application_base_dir }}/spack"
+
+# =========================================================
+# Extract bundled Spack packages
+# =========================================================
+
+- name: Extract compressed Spack packages
+  ansible.builtin.include_tasks: extract_tar.yml
+
+# =========================================================
+# Discover NSMSS environments
+# =========================================================
+
+- name: Find NSMSS environment directories
+  ansible.builtin.find:
+    paths: "{{ spack_hpc_apps_dir_path }}/NSMSS/environments"
+    file_type: directory
+    depth: 1
+  register: nsmss_env_dirs
+
+# =========================================================
+# Initialize Spack in each environment
+# =========================================================
+
+- name: Source Spack in each NSMSS environment
+  ansible.builtin.shell: |
+    source {{ application_base_dir }}/spack/share/spack/setup-env.sh
+  args:
+    executable: /bin/bash
+    chdir: "{{ item.path }}"
+  loop: "{{ nsmss_env_dirs.files }}"  

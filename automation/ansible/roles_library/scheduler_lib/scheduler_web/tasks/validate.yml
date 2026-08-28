@@ -1,0 +1,36 @@
+# roles/slurm_web/tasks/validate.yml
+---
+
+- name: Check slurmrestd socket exists
+  ansible.builtin.stat:
+    path: /run/slurmrestd/slurmrestd.socket
+  register: socket_check
+
+
+- name: Fail if socket not present
+  ansible.builtin.fail:
+    msg: "slurmrestd socket not found!"
+  when: not socket_check.stat.exists
+
+
+- name: Get JWT token
+  ansible.builtin.shell: |
+    export $(scontrol token)
+    echo $SLURM_JWT
+  register: jwt_token
+  changed_when: false
+
+
+- name: Test slurmrestd API
+  ansible.builtin.shell: |
+    export $(scontrol token)
+    curl -s -H X-SLURM-USER-TOKEN:$SLURM_JWT \
+    --unix-socket /run/slurmrestd/slurmrestd.socket \
+    http://slurm/slurm/v0.0.41/diag
+  register: rest_test
+  changed_when: false
+
+
+- name: Show API response
+  debug:
+    var: rest_test.stdout

@@ -1,0 +1,4 @@
+fw_service_name: firewalld
+fw_service_state: started     # started, stopped, restarted
+fw_service_enabled: true      # true or false
+

@@ -1,0 +1,13 @@
+# roles/slurm_web/defaults/main.yml
+slurm_web_packages:
+  - slurm-slurmrestd
+  - slurm
+  - munge
+  - slurm-web-agent
+  - slurm-web-gateway    
+  - python3-slurm-web
+
+jwt_key_path: /var/spool/slurm/jwt_hs256.key
+slurm_conf_path: /etc/slurm/slurm.conf
+slurmrestd_override_dir: /etc/systemd/system/slurmrestd.service.d
+slurmrestd_override_file: "{{ slurmrestd_override_dir }}/slurm-web.conf"

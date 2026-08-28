@@ -1,0 +1,25 @@
+# roles/slurm_web/tasks/slurm_conf.yml
+---
+
+- name: Ensure AuthAltTypes is set
+  ansible.builtin.lineinfile:
+    path: "{{ slurm_conf_path }}"
+    regexp: '^AuthAltTypes='
+    line: 'AuthAltTypes=auth/jwt'
+  notify: restart slurmctld
+
+
+- name: Ensure AuthAltParameters is set
+  ansible.builtin.lineinfile:
+    path: "{{ slurm_conf_path }}"
+    regexp: '^AuthAltParameters='
+    line: "AuthAltParameters=jwt_key={{ jwt_key_path }}"
+  notify: restart slurmctld
+
+
+- name: Ensure AccountingStorageType is set
+  ansible.builtin.lineinfile:
+    path: "{{ slurm_conf_path }}"
+    regexp: '^AccountingStorageType='
+    line: 'AccountingStorageType=accounting_storage/slurmdbd'
+  notify: restart slurmctld

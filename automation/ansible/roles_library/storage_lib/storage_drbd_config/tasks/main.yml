@@ -1,0 +1,35 @@
+---
+# storage_drbd: main tasks
+# 1) detect drbd backing device (LVM LV containing 'drbd' OR partition)
+# 2) prepare device (optional wipe, unmount)
+# 3) deploy DRBD configs (from templates)
+# 4) create-md (optional)
+# 5) bring up drbd, promote primary (only on designated primary)
+# 6) wait for peer UpToDate
+# 7) mkfs on primary only (if needed) — idempotent
+
+- name: Gather minimal facts (ensure ansible_hostname available)
+  setup:
+    gather_subset: min
+  changed_when: false
+
+- debug:
+    msg:
+      inventory: "{{ inventory_hostname }}"
+      hostname: "{{ ansible_hostname }}"
+      nodename: "{{ ansible_nodename }}"
+      fqdn: "{{ ansible_fqdn }}"
+
+- name: Prepare DRBD Device
+  include_tasks: drbd_device_setup.yml
+
+- name: DRBD Configuration
+  include_tasks: drbd_config.yml
+
+#  Metadata creation is optional
+- name: Metadata creation
+  include_tasks: create_md.yml
+
+
+- name: Enable DRBD Peer to Peer Connection
+  include_tasks: drbd_peer_up.yml

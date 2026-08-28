@@ -1,0 +1,14 @@
+{
+  "timestamp": "20260716_123840",
+  "files": [
+    "inventory/inventory_def.txt",
+    "inventory/group_vars/all/vault.yml",
+    "inventory/host_vars/hpc-master01.yml",
+    "inventory/host_vars/hpc-master02.yml",
+    "inventory/host_vars/headnode.yml",
+    "inventory/host_vars/client5.yml",
+    "inventory/host_vars/client3.yml",
+    "inventory/host_vars/client4.yml"
+  ],
+  "host_count": 6
+}

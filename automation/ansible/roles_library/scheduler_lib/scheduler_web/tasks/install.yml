@@ -1,0 +1,64 @@
+# roles/slurm_web/tasks/install.yml
+---
+
+- name: Install required slurm web packages
+  ansible.builtin.package:
+    name: "{{ slurm_web_packages }}"
+    state: present
+
+# =========================================================
+# Authentication Packages (Local → Online fallback)
+# =========================================================
+
+- name: Check installed auth packages
+  ansible.builtin.command: "rpm -q {{ item }}"
+  loop: "{{ slurm_web_packages }}"
+  register: auth_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Identify missing auth packages
+  ansible.builtin.set_fact:
+    missing_auth_pkgs: >-
+      {{ auth_check.results
+         | selectattr('rc', '!=', 0)
+         | map(attribute='item')
+         | list }}
+
+- name: Locate local auth RPMs
+  ansible.builtin.find:
+    paths: "{{ slurm_rpm_base }}/auth"
+    patterns: "*.rpm"
+  register: auth_rpms
+
+- name: Install auth RPMs from local directory
+  ansible.builtin.yum:
+    name: "{{ auth_rpms.files | map(attribute='path') | list }}"
+    state: present
+    disable_gpg_check: true
+  when:
+    - missing_auth_pkgs | length > 0
+    - auth_rpms.files | length > 0
+  ignore_errors: true
+
+- name: Recheck auth packages after local install
+  ansible.builtin.command: "rpm -q {{ item }}"
+  loop: "{{ missing_auth_pkgs }}"
+  register: auth_post_local
+  ignore_errors: true
+  changed_when: false
+
+- name: Identify auth packages still missing
+  ansible.builtin.set_fact:
+    still_missing_auth_pkgs: >-
+      {{ auth_post_local.results
+         | selectattr('rc', '!=', 0)
+         | map(attribute='item')
+         | list }}
+
+- name: Install auth packages from online repos
+  ansible.builtin.dnf:
+    name: "{{ still_missing_auth_pkgs }}"
+    state: present
+  when: still_missing_auth_pkgs | length > 0
+  ignore_errors: true      

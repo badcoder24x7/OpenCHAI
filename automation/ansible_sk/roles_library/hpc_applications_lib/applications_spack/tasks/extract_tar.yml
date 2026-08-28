@@ -1,0 +1,33 @@
+
+- name: Ensure spack apps directory exists
+  ansible.builtin.file:
+    path: "{{ spack_hpc_apps_dir_path }}"
+    state: directory
+    mode: "0755"
+
+##################################################################################################
+# Find all tar archives
+##################################################################################################
+
+- name: Find tar archives in spack apps directory
+  find:
+    paths: "{{ spack_hpc_apps_dir_path }}"
+    patterns:
+      - "*.tar"
+      - "*.tar.gz"
+      - "*.tgz"
+    file_type: file
+    recurse: false
+  register: spack_tar_files
+
+
+##################################################################################################
+# Extract archives only if not already extracted
+##################################################################################################
+- name: Extract tar files if not already extracted
+  unarchive:
+    src: "{{ item.path }}"
+    dest: "{{ spack_hpc_apps_dir_path }}"
+    remote_src: true
+    creates: "{{ spack_hpc_apps_dir_path }}/{{ item.path | basename | regex_replace('\\.tar\\.gz$|\\.tgz$|\\.tar$', '') }}"
+  loop: "{{ spack_tar_files.files }}"

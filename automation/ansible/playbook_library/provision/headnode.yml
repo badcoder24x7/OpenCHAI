@@ -1,0 +1,59 @@
+---
+- name: Master HPC Provisioning Playbook
+  hosts: all
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+
+  tasks:
+    - name: Display starting banner
+      ansible.builtin.debug:
+        msg: "🚀 Starting full HPC provisioning for {{ inventory_hostname }}"
+
+
+- import_playbook: ../../playbook_library/security/configure_firewall.yml
+  vars:
+    fw_service_name: firewalld
+    fw_service_state: stopped       # Example of overriding variable
+    fw_service_enabled: false       # Custom value
+    fw_install_if_missing: true
+
+- import_playbook: ../../playbook_library/security/configure_selinux.yml
+  vars:
+    selinux_mode: disabled
+    selinux_install_if_missing: true        
+
+#- import_playbook: ../../playbook_library/utility/utility_web_host.yml
+#  vars:
+#   web_server: nginx
+#   web_port: 8080
+
+- import_playbook: ../../playbook_library/network/internet_server.yml
+
+- import_playbook: ../../playbook_library/bootstrap/configure_chrony_server.yml
+  vars:
+    chrony_allow_networks:
+      - 10.10.0.0/16
+      - 192.168.1.0/24
+
+
+- import_playbook: ../../playbook_library/storage/storage_nfs_server.yml
+  vars:
+    nfs_server_service: nfs-server
+    nfs_server_state: started
+    nfs_server_enabled: true
+    nfs_server_install_if_missing: true
+
+    # Multiple NFS export points
+    nfs_exports:
+      - path: "{{ rpm_stack_path }}"
+        clients: "*"
+        options: ro,sync,no_root_squash
+      - path: "{{ configuration_dir_path }}"
+        clients: "*"
+        options: rw,sync,no_root_squash
+      - path: "{{ bin_dir_path }}"
+        clients: "*"
+        options: rw,sync,no_root_squash
+

@@ -1,0 +1,33 @@
+---
+- name: Run STREAM Benchmark
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+
+  vars:
+    linpack_log_base_dir: /home/apps/intel/mkl/2025.3/share/mkl/benchmarks/mp_linpack/logs
+    stream_install_dir: "/home/apps/intel/mkl/2025.3/share/mkl/benchmarks/stream"
+    stream_version: "5.10"
+    stream_array_size: 800000000
+    stream_ntimes: 20
+    stream_cc: "gcc"
+    stream_cflags: "-O3 -march=native -fopenmp -mcmodel=medium"
+    stream_threads: "{{ ansible_processor_vcpus }}"
+    stream_source_url: "https://www.cs.virginia.edu/stream/FTP/Code/stream.c"
+    stream_results_dir: "/home/apps/intel/mkl/2025.3/share/mkl/benchmarks/stream/logs"
+    stream_run_benchmark: true
+# Benchmark mode
+# all
+# interleave
+# socket0
+# socket1
+    stream_run_mode: "socket1"
+      
+  pre_tasks:
+    - name: Reset failed host state (if any)
+      meta: clear_host_errors
+
+  roles:
+    - "{{ roles_parent_path }}/benchmark_lib/benchmark_stream"
+

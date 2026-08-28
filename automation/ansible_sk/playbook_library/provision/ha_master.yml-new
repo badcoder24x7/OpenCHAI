@@ -1,0 +1,36 @@
+---
+###############################################################################
+# Master HPC Provisioning – Enterprise Orchestrator
+###############################################################################
+
+- name: Master HPC Provisioning Playbook
+  hosts: hpc_master
+  gather_facts: no
+  ignore_unreachable: yes
+  become: true
+
+  vars_files:
+    - ../../group_vars/all.yml
+
+  tasks:
+    - name: Display starting banner
+      ansible.builtin.debug:
+        msg: "Starting HPC provisioning on {{ inventory_hostname }}"
+      tags: [always]
+
+
+###############################################################################
+# PHASE 2 – HIGH AVAILABILITY
+###############################################################################
+
+- import_playbook: ../../playbook_library/utility/update_kernel.yml
+  tags: [phase2, ha, kernel]
+
+- import_playbook: ../../playbook_library/utility/utility_pcs_drbd.yml
+  tags: [phase2, ha, pcs_drbd_pkg]
+
+- import_playbook: ../../playbook_library/storage/storage_drbd_configure.yml
+  tags: [phase2, ha, drbd_config]
+
+- import_playbook: ../../playbook_library/utility/utility_pcs_basic.yml
+  tags: [phase2, ha, pcs_config]

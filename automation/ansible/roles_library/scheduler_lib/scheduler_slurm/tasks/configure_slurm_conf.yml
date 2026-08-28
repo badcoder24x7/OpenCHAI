@@ -1,0 +1,143 @@
+# ============================================================
+# slurm.conf (AUTHORITATIVE)
+# ============================================================
+
+# --------------------------------------------------------------------
+# MASTER: Deploy the authoritative slurm.conf
+# --------------------------------------------------------------------
+- name: Deploy slurm.conf
+  ansible.builtin.template:
+    src: slurm.conf.j2
+    dest: "{{ slurm_conf_dir }}/slurm.conf"
+    owner: "{{ slurm_user }}"
+    group: "{{ slurm_group }}"
+    mode: "0644"
+      #  notify: Reload Slurm
+  when:
+    - slurm_node_role == "master"
+    - slurm_replace_configs
+
+
+# ============================================================
+# COMPUTE NODE DISCOVERY
+# ============================================================
+
+- name: Get Slurm node configuration
+  ansible.builtin.command: slurmd -C
+  register: slurmd_config
+  changed_when: false
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs
+
+- name: Extract NodeName line
+  ansible.builtin.set_fact:
+    slurm_node_config: "{{ slurmd_config.stdout_lines[0] }}"
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs
+
+- name: Extract compute node name
+  ansible.builtin.set_fact:
+    slurm_node_name: "{{ slurm_node_config | regex_search('NodeName=([^ ]+)', '\\1') | first }}"
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs
+
+# ============================================================
+# NODE DEFINITIONS
+# ============================================================
+
+- name: Add Node definition
+  ansible.builtin.lineinfile:
+    path: "{{ slurm_conf_dir }}/slurm.conf"
+    regexp: "^NodeName={{ slurm_node_name }}\\b"
+    line: "{{ slurm_node_config }}"
+    insertafter: EOF
+    state: present
+      #  notify: Reload Slurm
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs
+
+
+# ============================================================
+# PARTITION MANAGEMENT
+# ============================================================
+
+- name: Check if partition exists
+  ansible.builtin.command:
+    cmd: grep '^PartitionName=' {{ slurm_conf_dir }}/slurm.conf
+  register: partition_exists
+  changed_when: false
+  failed_when: false
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs
+
+- name: Create partition if missing
+  ansible.builtin.lineinfile:
+    path: "{{ slurm_conf_dir }}/slurm.conf"
+    insertafter: EOF
+    line: "PartitionName=standard Default=YES MaxTime=INFINITE State=UP Nodes=ALL"
+#    line: "PartitionName=standard Default=YES MaxTime=INFINITE State=UP Nodes={{ slurm_node_name }}"      
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs
+    - partition_exists.rc != 0
+      #  notify: Reload Slurm
+
+- name: Read slurm.conf
+  ansible.builtin.slurp:
+    src: "{{ slurm_conf_dir }}/slurm.conf"
+  register: slurm_conf
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs
+
+- name: Extract partition line
+  ansible.builtin.set_fact:
+    partition_line: >-
+      {{
+        slurm_conf.content
+        | b64decode
+        | regex_search('^PartitionName=.*$', multiline=True)
+      }}
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs
+
+- name: Extract current node list
+  ansible.builtin.set_fact:
+    current_nodes: >-
+      {{
+        (
+          partition_line
+          | regex_findall('Nodes=([^[:space:]]+)')
+          | first
+          | default('')
+        ).split(',')
+        | reject('equalto', '')
+        | unique
+        | list
+      }}
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs
+
+- name: Update partition node list
+  ansible.builtin.replace:
+    path: "{{ slurm_conf_dir }}/slurm.conf"
+    regexp: '^PartitionName=.*$'
+    replace: >-
+      {{
+        partition_line
+        | regex_replace(
+            'Nodes=[^[:space:]]+',
+            'Nodes=' + ((current_nodes + [slurm_node_name]) | unique | join(','))
+          )
+      }}
+      #  notify: Reload Slurm
+  when:
+    - slurm_node_role == "compute"
+    - slurm_replace_configs

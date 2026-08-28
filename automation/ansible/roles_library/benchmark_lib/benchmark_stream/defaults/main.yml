@@ -1,0 +1,51 @@
+---
+stream_install_dir: "/opt/benchmarks/stream"
+stream_version: "5.10"
+
+stream_array_size: 800000000
+stream_ntimes: 20
+
+stream_cc: "gcc"
+stream_cflags: "-O3 -march=native -fopenmp -mcmodel=medium"
+
+stream_threads: "{{ ansible_processor_vcpus }}"
+
+stream_source_url: "https://www.cs.virginia.edu/stream/FTP/Code/stream.c"
+
+stream_results_dir: "/var/log/benchmarks/stream"
+stream_run_benchmark: true
+
+
+  ###############
+stream_binary: "{{ stream_install_dir }}/stream"
+
+stream_threads: "{{ ansible_processor_vcpus }}"
+
+stream_results_dir: /var/log/benchmarks/stream
+
+stream_use_numactl: true  
+
+# Benchmark mode
+# all
+# interleave
+# socket0
+# socket1
+stream_run_mode: "all"
+
+
+stream_socket_threads: 48
+  
+stream_profiles:
+  - name: all
+    command: "./stream"
+
+  - name: interleave
+    command: "numactl --interleave=all ./stream"
+
+  - name: socket0
+    command: "numactl --cpunodebind=0 --membind=0 ./stream"
+
+  - name: socket1
+    command: "numactl --cpunodebind=1 --membind=1 ./stream"  
+
+

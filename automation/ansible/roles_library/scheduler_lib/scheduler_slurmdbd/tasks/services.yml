@@ -1,0 +1,16 @@
+---
+- name: Enable and start Munge (master only)
+  ansible.builtin.systemd:
+    name: munge
+    state: started
+    enabled: true
+
+- name: Enable slurmdbd service
+  ansible.builtin.systemd:
+    name: slurmdbd
+    enabled: true
+
+- name: Start slurmdbd service
+  ansible.builtin.systemd:
+    name: slurmdbd
+    state: started

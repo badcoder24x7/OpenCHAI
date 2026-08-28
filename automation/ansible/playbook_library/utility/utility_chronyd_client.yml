@@ -1,0 +1,37 @@
+---
+- name: Configure Chrony Service
+  hosts: all
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - ../../group_vars/all.yml
+
+  vars:
+    chrony_mode: client    
+    dev_rpm_path: "{{ rpm_stack_path }}/developement_rpms"      
+    chrony_use_only_internal_servers: false
+    # ============================================================
+    # External NTP Servers
+    # ============================================================
+    chrony_ntp_servers:
+      - ntp.cdac.in 
+      - ntp.iitb.ac.in 
+      - time.nplindia.org 
+      - time.nplindia.in 
+      - samay1.nic.in 
+      - samay2.nic.in 
+      - in.pool.ntp.org 
+
+    # ============================================================
+    # Internal Chrony Servers
+    # ============================================================
+    chrony_server_hosts:
+      - headnode
+
+  pre_tasks:
+    - name: Reset failed host state (if any)
+      meta: clear_host_errors
+
+
+  roles:
+    - "{{ roles_parent_path }}/utility_lib/utility_chronyd"

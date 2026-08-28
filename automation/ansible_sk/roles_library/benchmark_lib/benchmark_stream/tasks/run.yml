@@ -1,0 +1,98 @@
+---
+- name: Create STREAM launcher
+  ansible.builtin.template:
+    src: stream.sh.j2
+    dest: "{{ stream_install_dir }}/stream.sh"
+    mode: "0755"
+
+- name: Get NUMA node count
+  ansible.builtin.command: lscpu -p=NODE
+  register: numa_nodes
+  changed_when: false
+
+- name: Calculate NUMA node count
+  ansible.builtin.set_fact:
+    stream_numa_nodes: >-
+      {{
+        numa_nodes.stdout_lines
+        | reject('match', '^#')
+        | map('int')
+        | unique
+        | list
+        | length
+      }}
+
+
+- name: Configure STREAM execution
+  ansible.builtin.set_fact:
+    stream_omp_threads: >-
+      {{
+        ansible_processor_vcpus
+        if stream_run_mode in ['all', 'interleave']
+        else stream_socket_threads
+      }}
+
+    stream_command: >-
+      {{
+        {
+          'all': './stream',
+          'interleave': 'numactl --interleave=all ./stream',
+          'socket0': 'numactl --cpunodebind=0 --membind=0 ./stream',
+          'socket1': 'numactl --cpunodebind=1 --membind=1 ./stream'
+        }[stream_run_mode]
+      }}
+
+- name: Run STREAM benchmark
+  ansible.builtin.shell: |
+    export OMP_NUM_THREADS={{ stream_omp_threads }}
+    export OMP_PROC_BIND=spread
+    export OMP_PLACES=cores
+
+    {{ stream_command }} | tee {{ stream_results_dir }}/stream_{{ stream_run_mode }}_$(date +%F_%H-%M-%S).log
+  args:
+    chdir: "{{ stream_install_dir }}"
+  register: stream_output
+  when: stream_run_benchmark
+
+# --------------------------------------------------------------------
+# Display STREAM benchmark summary
+# --------------------------------------------------------------------
+- name: Show STREAM benchmark summary
+  ansible.builtin.debug:
+    msg:
+      - "STREAM Profile : {{ stream_run_mode }}"
+      - "{{ stream_output.stdout_lines | select('search', 'Copy|Scale|Add|Triad') | list }}"
+  when: stream_run_benchmark
+
+# --------------------------------------------------------------------
+# Extract STREAM Triad bandwidth
+# --------------------------------------------------------------------
+- name: Extract STREAM Triad bandwidth
+  ansible.builtin.shell: >
+    grep '^Triad:' {{ stream_results_dir }}/stream_{{ stream_run_mode }}_*.log | tail -1
+  register: stream_triad
+  changed_when: false
+  when: stream_run_benchmark
+
+# --------------------------------------------------------------------
+# Display STREAM Triad result
+# --------------------------------------------------------------------
+- name: Display STREAM Triad result
+  ansible.builtin.debug:
+    msg: "{{ stream_triad.stdout }}"
+  when: stream_run_benchmark    
+
+
+
+# --------------------------------------------------------------------
+# Display STREAM benchmark summary
+# --------------------------------------------------------------------
+- name: Show STREAM benchmark summary
+  ansible.builtin.debug:
+    msg:
+      - "Mode   : {{ stream_run_mode }}"
+      - "Copy   : {{ stream_output.stdout | regex_search('Copy:\\s+.*', multiline=True) | default('N/A') }}"
+      - "Scale  : {{ stream_output.stdout | regex_search('Scale:\\s+.*', multiline=True) | default('N/A') }}"
+      - "Add    : {{ stream_output.stdout | regex_search('Add:\\s+.*', multiline=True) | default('N/A') }}"
+      - "Triad  : {{ stream_output.stdout | regex_search('Triad:\\s+.*', multiline=True) | default('N/A') }}"
+  when: stream_run_benchmark    

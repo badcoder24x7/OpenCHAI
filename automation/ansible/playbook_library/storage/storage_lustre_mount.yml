@@ -1,0 +1,17 @@
+---
+- name: Mount the storage [/home and /scratch] on Lustre client nodes
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+
+  vars:
+    lustre_mounts:
+      - dest: "{{ lustre_mounts_dest_primary_path }}"
+        src: "{{ lustre_mount_server_src }}:{{ lustre_mounts_src_primary_path }}"
+
+      - dest: "{{ lustre_mounts_dest_secondary_path }}"
+        src: "{{ lustre_mount_server_src }}:{{ lustre_mounts_src_secondary_path }}"
+
+  roles:
+    - "{{ roles_parent_path }}/storage_lib/storage_lustre_mount"

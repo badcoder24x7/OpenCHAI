@@ -1,0 +1,212 @@
+####################### OpenCHAI Manager Tool Variable #####################
+openchai_version: openchai_ha_full_v1.25.0
+base_dir: /opt/OpenCHAI_Registry/july/OpenCHAI
+os_version: rocky9.6
+os_arch: x86_64
+rhel_linux_label: rh9
+enterprise_linux_label: el9
+default_kernel_version: "5.14.0-570.17.1.el9_6"
+
+# OpenCHAI Manager Environment Setup
+hpcsuite_registry_mount_path: "{{ base_dir }}/hpcsuite_registry"
+openchai_vault_path: "{{ hpcsuite_registry_mount_path }}/hostmachine_reg/{{os_arch}}/{{ os_version }}/{{ openchai_version }}"
+rpm_stack_path: "{{ openchai_vault_path }}/rpm-stack"
+configuration_dir_path: "{{ openchai_vault_path }}/mount"
+bin_dir_path: "{{ openchai_vault_path }}/bin"
+os_iso_dir_path: "{{ hpcsuite_registry_mount_path }}/os_iso/{{ os_version }}"
+provisioning_osimage_dir_path: "{{ hpcsuite_registry_mount_path }}/provisioning_osimage/{{ os_version }}"
+spack_hpc_apps_dir_path: "{{ hpcsuite_registry_mount_path }}/spack_hpc_application/{{ os_version }}"
+roles_parent_path: "{{ base_dir }}/automation/ansible/roles_library"
+inventory_file: "{{ base_dir }}/automation/ansible/inventory/inventory_def.txt"
+
+hpcsangrah_vault_network_url: "https://hpcsangrah-test.pune.cdac.in/vault"
+
+# Ansible inventroy hostname
+primary_master_node_inventory_hostname: "{{ (lookup('pipe', 'grep ^hpc-master01 ' + inventory_file)).split()[0] }}"
+secondary_master_node_inventory_hostname: "{{ (lookup('pipe', 'grep ^hpc-master02 ' + inventory_file)).split()[0] }}"
+headnode_inventory_hostname: "{{ (lookup('pipe', 'grep ^headnode ' + inventory_file)).split()[0] }}"
+
+####################### HPC Master and Management Nodes IP and Hostname Variables ###########################
+# Extract headnode IP dynamically from inventory
+headnode_ip: "{{ (lookup('pipe', 'grep ^headnode ' + inventory_file)).split()[1] }}"
+headnode_hostname: "{{ (lookup('pipe', 'grep ^headnode ' + inventory_file)).split()[4] }}"
+
+#Service Nodes IP's
+primary_master_node_ip: "{{ (lookup('pipe', 'grep ^hpc-master01 ' + inventory_file)).split()[1] }}"
+secondary_master_node_ip: "{{ (lookup('pipe', 'grep ^hpc-master02 ' + inventory_file)).split()[1] }}"
+
+primary_mgmt_node_ip: "{{ (lookup('pipe', 'grep ^hpc-mgmt01 ' + inventory_file)).split()[1] }}"
+secondary_mgmt_node_ip: "{{ (lookup('pipe', 'grep ^hpc-mgmt02 ' + inventory_file)).split()[1] }}"
+
+#Service Nodes Hostname
+primary_master_node_hostname: "{{ (lookup('pipe', 'grep ^hpc-master01 ' + inventory_file)).split()[4] }}"
+secondary_master_node_hostname: "{{ (lookup('pipe', 'grep ^hpc-master02 ' + inventory_file)).split()[4] }}"
+
+primary_mgmt_node_hostname: "{{ (lookup('pipe', 'grep ^hpc-mgmt01 ' + inventory_file)).split()[4] }}"
+secondary_mgmt_node_hostname: "{{ (lookup('pipe', 'grep ^hpc-mgmt02 ' + inventory_file)).split()[4] }}"
+
+####################### Pre-Requisite Variables #################################
+# internet client variable
+fallback_dns:
+  nameservers:
+    - 10.208.192.11
+    - 10.208.192.12
+
+  search_domains:
+    - pune.cdac.in
+
+
+chrony_allow_networks:
+  - 10.10.0.0/16
+  - 192.168.1.0/24
+
+
+
+####################### PXE Server Configuration Variables #########################
+pxe_boot_iso: "Rocky-9.6-x86_64-dvd.iso"
+
+# PXE Network Configuration
+pxe_server_ip: "{{ headnode_ip }}"
+pxe_server_dns: "8.8.8.8"
+# Standard Partition Sizes (MB)
+part_efi_size: 600
+part_boot_size: 1024
+part_swap_size: 2048
+part_var_size: 4096
+# LVM Configuration
+lvm_vg_name: rockylinux
+lvm_pe_size: 4096
+lvm_swap_size: 2048
+lvm_var_size: 40960
+# Localization
+ks_timezone: Asia/Kolkata
+# Network (Kickstart)
+ks_bootproto: dhcp
+# Security
+ks_root_password: root
+# Kickstart Selection
+ks_type: "lvm"   # options: standard | lvm
+
+####################### Lustre Variable ###########################
+# Lustre Server IPs and Network Configurations
+storage_vm_server_ip_one: 10.5.41.1
+storage_vm_server_ha_ip_one: 10.5.41.11
+storage_vm_server_ip_two: 10.5.41.2
+storage_vm_server_ha_ip_two: 10.5.41.12
+
+lnet_networks: o2ib
+lnet_networks_ha: o2ib1
+
+# Lustre Mount Paths
+lustre_mounts_dest_primary_path: /home
+lustre_mounts_src_primary_path: /home
+lustre_mounts_dest_secondary_path: /scratch
+lustre_mounts_src_secondary_path: /scratch
+
+# Lustre Mount Source String
+lustre_mount_server_src: "{{ storage_vm_server_ip_one }}@{{ lnet_networks }},{{ storage_vm_server_ha_ip_one }}@{{ lnet_networks_ha }}:{{ storage_vm_server_ip_two }}@{{ lnet_networks }},{{ storage_vm_server_ha_ip_two }}@{{ lnet_networks_ha }}"
+
+
+####################### DRBD High Availability Nodes Hostname and their Netwrok IPs #######################
+# xCAT VIP IP
+private_interface: "ens1f2"
+
+xcat_vip_ip: "172.10.3.240"
+xcat_vip_interface: "ens1f2:0"
+xcat_vip_subnet_prefix: "22"
+xcat_vip_resource_name: "vip_xCAT"
+
+drbd_primary_master_node_ip: 172.10.3.6
+drbd_secondary_master_node_ip: 172.10.3.8
+drbd_primary_master_node_hostname: "{{ primary_master_node_hostname }}"
+drbd_secondary_master_node_hostname: "{{ secondary_master_node_hostname }}"
+drbd_resource_name: "rudra_drbd"
+drbd_clone_name: "drbdfs-clone"
+drbd_fs_resource_name: "xcatfs"
+drbd_device: "/dev/drbd0"
+drbd_mount_dir: "/drbd"
+drbd_fstype: "ext4"
+drbd_primitive_name: "drbdfs"
+drbd_sync_delay: "90"
+drbd_sync_retries: "50"
+
+pcs_primary_master_node_hostname: cn06
+pcs_secondary_master_node_hostname: cn08
+pcs_cluster_password: "StrongPass123"
+pcs_cluster_name: "drbd_xCAT"
+
+
+####################### Docker Swarm Manager #######################
+primary_swarm_manager_ip: "{{ primary_master_node_ip }}"
+primary_swarm_manager: "{{ primary_master_node_inventory_hostname }}"
+secondary_swarm_manager: "{{ secondary_master_node_inventory_hostname }}"
+tertiary_swarm_manager: "headnode"
+
+####################### xCAT Management Tool Variable #######################
+xcat_version_tag: "2.17.0"
+xcat_repo_version_tag: "2.17"
+xcat_container_img_tar: "cdac_xcat_{{ os_version }}_{{ xcat_version_tag }}"
+xcat_docker_img: "cdac_xcat/{{ os_version }}:{{ xcat_version_tag }}"
+xcat_service_name: "xcat"
+xcat_vip: "{{ xcat_vip_ip }}"
+gateway_ip: "{{ xcat_vip_ip }}"
+private_ethernet_interface: "{{ private_interface }}"
+mysql_port: 3307
+mysql_admin_pw: Admin123
+mysql_root_pw: Admin123
+
+domain_name: pune.ac.in
+dhcp_interface: ens1f2:0,ens1f2
+
+
+####################### Slurm Workload Manager Variable #####################
+cluster_name: "xlr8ed-hpc"
+slurm_cluster_name: "rudra-hpc"
+slurm_version: "slurm-25.11.6"
+vault_slurmdb_password: "SlrumPass"
+vault_slurmdb_ro_password: "SlrumPass"
+
+######################## OpenLDAP Tool variable ##########################
+######################## OpenLDAP Tool variable ##########################
+primary_ldap_node_ip: "{{ primary_master_node_ip }}"
+secondary_ldap_node_ip: "{{ secondary_master_node_ip }}"
+ldap_container_img_tar: "cdac_openldap_multi-replication_{{ os_version}}_{{ ldap_version_tag }}"
+openldap_container_image: "cdac_openldap_multi-replication/{{ os_version}}:{{ ldap_version_tag }}"
+
+ldap_version_tag: "2.6.8"
+ldap_base_dn: "dc=nsm,dc=in"
+LDAP_ROOT_PASSWD: "Admin123"
+BASE_PRIMARY_DC: "in"
+BASE_SECONDARY_DC: "nsm"
+BASE_SUBDOMAIN_DC: "cdac"
+
+OU1: "People"
+OU2: "Group"
+OU3: "CDAC"
+OU4: "support"
+OU5: "nsmext"
+OU6: "nsmapp"
+OU7: "IIT"
+
+####################### Monitoring Tools Variables #############################
+monitoring_log_server_ip: "{{ secondary_mgmt_node_ip }}"  # It can be any login nodes or mgmt nodes
+
+
+
+
+####################### Application Module Variable #######################
+application_base_dir: "/home/apps"
+compiler_dir: "{{ application_base_dir }}/Compiler"
+
+# lmod
+modulepath_dir: "{{ application_base_dir }}/modulefiles/apps"
+
+# nvidia cuda version
+nvidia_cuda_version: "13.0"
+
+####################### Intel Module Variable #######################
+# Intel OneAPI installer path
+intel_installer: "intel-oneapi-hpc-toolkit-2025.3.0.381_offline.sh"
+
+
+

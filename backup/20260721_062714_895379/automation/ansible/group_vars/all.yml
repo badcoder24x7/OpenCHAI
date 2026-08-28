@@ -1,0 +1,156 @@
+# OpenCHAI GUI — group_vars/all.yml
+# Auto-managed — last updated via Cluster Setup GUI
+
+BASE_PRIMARY_DC: in
+BASE_SECONDARY_DC: nsm
+BASE_SUBDOMAIN_DC: cdac
+LDAP_ROOT_PASSWD: Admin123
+OU1: People
+OU2: Group
+OU3: CDAC
+OU4: support
+OU5: nsmext
+OU6: nsmapp
+OU7: IIT
+application_base_dir: /home/apps
+base_dir: /opt/OpenCHAI_Registry/july/OpenCHAI
+bin_dir_path: '{{ openchai_vault_path }}/bin'
+chrony_allow_networks:
+- 10.10.0.0/16
+- 192.168.1.0/24
+cluster_name: xlr8ed-hpc
+compiler_dir: '{{ application_base_dir }}/Compiler'
+configuration_dir_path: '{{ openchai_vault_path }}/mount'
+default_kernel_version: 5.14.0-570.17.1.el9_6
+dhcp_interface: ens1f2:0,ens1f2
+domain_name: pune.ac.in
+drbd_clone_name: drbdfs-clone
+drbd_device: /dev/drbd0
+drbd_fs_resource_name: xcatfs
+drbd_fstype: ext4
+drbd_mount_dir: /drbd
+drbd_primary_master_node_hostname: '{{ primary_master_node_hostname }}'
+drbd_primary_master_node_ip: 172.10.3.6
+drbd_primitive_name: drbdfs
+drbd_resource_name: rudra_drbd
+drbd_secondary_master_node_hostname: '{{ secondary_master_node_hostname }}'
+drbd_secondary_master_node_ip: 172.10.3.8
+drbd_sync_delay: '90'
+drbd_sync_retries: '50'
+enterprise_linux_label: el9
+fallback_dns:
+  nameservers:
+  - 10.208.192.11
+  - 10.208.192.12
+  search_domains:
+  - pune.cdac.in
+gateway_ip: '{{ xcat_vip_ip }}'
+headnode_hostname: '{{ (lookup(''pipe'', ''grep ^headnode '' + inventory_file)).split()[4]
+  }}'
+headnode_inventory_hostname: '{{ (lookup(''pipe'', ''grep ^headnode '' + inventory_file)).split()[0]
+  }}'
+headnode_ip: '{{ (lookup(''pipe'', ''grep ^headnode '' + inventory_file)).split()[1]
+  }}'
+hpcsangrah_vault_network_url: https://hpcsangrah-test.pune.cdac.in/vault
+hpcsuite_registry_mount_path: '{{ base_dir }}/hpcsuite_registry'
+intel_installer: intel-oneapi-hpc-toolkit-2025.3.0.381_offline.sh
+inventory_file: '{{ base_dir }}/automation/ansible/inventory/inventory_def.txt'
+ks_bootproto: dhcp
+ks_root_password: root
+ks_timezone: Asia/Kolkata
+ks_type: lvm
+ldap_base_dn: dc=nsm,dc=in
+ldap_container_img_tar: cdac_openldap_multi-replication_{{ os_version}}_{{ ldap_version_tag
+  }}
+ldap_version_tag: 2.6.8
+lnet_networks: o2ib
+lnet_networks_ha: o2ib1
+lustre_mount_server_src: '{{ storage_vm_server_ip_one }}@{{ lnet_networks }},{{ storage_vm_server_ha_ip_one
+  }}@{{ lnet_networks_ha }}:{{ storage_vm_server_ip_two }}@{{ lnet_networks }},{{
+  storage_vm_server_ha_ip_two }}@{{ lnet_networks_ha }}'
+lustre_mounts_dest_primary_path: /home
+lustre_mounts_dest_secondary_path: /scratch
+lustre_mounts_src_primary_path: /home
+lustre_mounts_src_secondary_path: /scratch
+lvm_pe_size: 4096
+lvm_swap_size: 2048
+lvm_var_size: 40960
+lvm_vg_name: rockylinux
+modulepath_dir: '{{ application_base_dir }}/modulefiles/apps'
+monitoring_log_server_ip: '{{ secondary_mgmt_node_ip }}'
+mysql_admin_pw: Admin123
+mysql_port: 3307
+mysql_root_pw: Admin123
+nvidia_cuda_version: '13.0'
+openchai_vault_path: '{{ hpcsuite_registry_mount_path }}/hostmachine_reg/{{os_arch}}/{{
+  os_version }}/{{ openchai_version }}'
+openchai_version: openchai_ha_full_v1.25.0
+openldap_container_image: cdac_openldap_multi-replication/{{ os_version}}:{{ ldap_version_tag
+  }}
+os_arch: x86_64
+os_iso_dir_path: '{{ hpcsuite_registry_mount_path }}/os_iso/{{ os_version }}'
+os_version: rocky9.6
+part_boot_size: 1024
+part_efi_size: 600
+part_swap_size: 2048
+part_var_size: 4096
+pcs_cluster_name: drbd_xCAT
+pcs_cluster_password: StrongPass123
+pcs_primary_master_node_hostname: cn06
+pcs_secondary_master_node_hostname: cn08
+primary_ldap_node_ip: '{{ primary_master_node_ip }}'
+primary_master_node_hostname: '{{ (lookup(''pipe'', ''grep ^hpc-master01 '' + inventory_file)).split()[4]
+  }}'
+primary_master_node_inventory_hostname: '{{ (lookup(''pipe'', ''grep ^hpc-master01
+  '' + inventory_file)).split()[0] }}'
+primary_master_node_ip: '{{ (lookup(''pipe'', ''grep ^hpc-master01 '' + inventory_file)).split()[1]
+  }}'
+primary_mgmt_node_hostname: '{{ (lookup(''pipe'', ''grep ^hpc-mgmt01 '' + inventory_file)).split()[4]
+  }}'
+primary_mgmt_node_ip: '{{ (lookup(''pipe'', ''grep ^hpc-mgmt01 '' + inventory_file)).split()[1]
+  }}'
+primary_swarm_manager: '{{ primary_master_node_inventory_hostname }}'
+primary_swarm_manager_ip: '{{ primary_master_node_ip }}'
+private_ethernet_interface: '{{ private_interface }}'
+private_interface: ens1f2
+provisioning_osimage_dir_path: '{{ hpcsuite_registry_mount_path }}/provisioning_osimage/{{
+  os_version }}'
+pxe_boot_iso: Rocky-9.6-x86_64-dvd.iso
+pxe_server_dns: 8.8.8.8
+pxe_server_ip: '{{ headnode_ip }}'
+rhel_linux_label: rh9
+roles_parent_path: '{{ base_dir }}/automation/ansible/roles_library'
+rpm_stack_path: '{{ openchai_vault_path }}/rpm-stack'
+secondary_ldap_node_ip: '{{ secondary_master_node_ip }}'
+secondary_master_node_hostname: '{{ (lookup(''pipe'', ''grep ^hpc-master02 '' + inventory_file)).split()[4]
+  }}'
+secondary_master_node_inventory_hostname: '{{ (lookup(''pipe'', ''grep ^hpc-master02
+  '' + inventory_file)).split()[0] }}'
+secondary_master_node_ip: '{{ (lookup(''pipe'', ''grep ^hpc-master02 '' + inventory_file)).split()[1]
+  }}'
+secondary_mgmt_node_hostname: '{{ (lookup(''pipe'', ''grep ^hpc-mgmt02 '' + inventory_file)).split()[4]
+  }}'
+secondary_mgmt_node_ip: '{{ (lookup(''pipe'', ''grep ^hpc-mgmt02 '' + inventory_file)).split()[1]
+  }}'
+secondary_swarm_manager: '{{ secondary_master_node_inventory_hostname }}'
+slurm_cluster_name: rudra-hpc
+slurm_version: slurm-25.11.6
+spack_hpc_apps_dir_path: '{{ hpcsuite_registry_mount_path }}/spack_hpc_application/{{
+  os_version }}'
+storage_vm_server_ha_ip_one: 10.5.41.11
+storage_vm_server_ha_ip_two: 10.5.41.12
+storage_vm_server_ip_one: 10.5.41.1
+storage_vm_server_ip_two: 10.5.41.2
+tertiary_swarm_manager: headnode
+vault_slurmdb_password: SlrumPass
+vault_slurmdb_ro_password: SlrumPass
+xcat_container_img_tar: cdac_xcat_{{ os_version }}_{{ xcat_version_tag }}
+xcat_docker_img: cdac_xcat/{{ os_version }}:{{ xcat_version_tag }}
+xcat_repo_version_tag: '2.17'
+xcat_service_name: xcat
+xcat_version_tag: 2.17.0
+xcat_vip: '{{ xcat_vip_ip }}'
+xcat_vip_interface: ens1f2:0
+xcat_vip_ip: 172.10.3.240
+xcat_vip_resource_name: vip_xCAT
+xcat_vip_subnet_prefix: '22'

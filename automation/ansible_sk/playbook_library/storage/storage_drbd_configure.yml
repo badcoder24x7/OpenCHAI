@@ -1,0 +1,22 @@
+---
+- name: Configure DRBD replication setup
+  hosts: all
+  become: yes
+  vars_files:
+    - ../../group_vars/all.yml
+
+  vars:
+    drbd_resource_name: rudra_drbd
+    #drbd_disk: /dev/nvme0n1p5
+    #drbd_device: /dev/drbd0
+    drbd_force_md_create: true
+    drbd_nodes:
+      - name: "{{ drbd_primary_master_node_hostname }}"
+        ip: "{{ drbd_primary_master_node_ip }}"
+        device: /dev/drbd0
+      - name: "{{ drbd_secondary_master_node_hostname }}"
+        ip: "{{ drbd_secondary_master_node_ip }}"
+        device: /dev/drbd0
+
+  roles:
+    - "{{ roles_parent_path }}/storage_lib/storage_drbd_config"

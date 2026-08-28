@@ -1,0 +1,8 @@
+# roles/slurm_web/tasks/main.yml
+---
+
+- include_tasks: install.yml
+- include_tasks: jwt.yml
+- include_tasks: slurm_conf.yml
+- include_tasks: slurmrestd.yml
+- include_tasks: validate.yml

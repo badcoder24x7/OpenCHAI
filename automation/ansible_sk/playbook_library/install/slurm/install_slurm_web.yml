@@ -1,0 +1,12 @@
+---
+- name: Setup Slurm Web Utilities (slurmrestd + JWT)
+  hosts: all
+  become: true
+
+  vars_files:
+    - ../../../group_vars/all.yml
+
+  vars:
+
+  roles:
+    - "{{ roles_parent_path }}/scheduler_lib/scheduler_web"

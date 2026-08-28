@@ -1,0 +1,7 @@
+---
+# Host vars for shavak_dl_2 — auto-generated, do not edit manually
+ansible_user: shavak
+ansible_host: 10.208.34.102
+ansible_port: 22
+ansible_password: "{{ vault_passwords[inventory_hostname] }}"
+ansible_become_pass: "{{ vault_passwords[inventory_hostname] }}"

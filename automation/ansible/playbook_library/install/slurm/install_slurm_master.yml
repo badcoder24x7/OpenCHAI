@@ -1,0 +1,49 @@
+---
+- name: Install and configure Slurm
+  hosts: all
+  become: true
+
+  vars_files:
+    - ../../../group_vars/all.yml
+
+  vars:
+    dev_rpm_path: "{{ rpm_stack_path }}/developement_rpms"
+    slurm_rpm_base: "{{ rpm_stack_path  }}/slurm_rpms/{{ enterprise_linux_label }}/"
+    slurm_controller_group: "{{ ansible_hpc_master_group_name }}"
+    slurm_generate_jwt_key: true
+    munge_generate_key: true
+
+    slurm_reinstall: false
+    pmix_version: "pmix-4.2.8"
+    slurm_version: "slurm-25-05-pmix-4-2-8"
+    slurm_node_role: "master"
+    slurm_cluster_name: "openchai-rudra-hpc"
+    slurm_ha_enabled: true
+
+    slurm_user: slurm
+    slurm_group: slurm
+    slurm_uid: 900
+    slurm_gid: 900
+
+    munge_user: munge
+    munge_group: munge
+    munge_uid: 971
+    munge_gid: 968
+
+    slurm_conf_dir: /etc/slurm
+    slurm_log_dir: /var/log/slurm
+    slurm_state_dir: /var/spool/slurmctld
+    slurm_share_dir: /var/share/slurm
+
+    munge_generate_key: true
+    slurm_generate_jwt_key: true
+    slurm_jwt_key_path: "{{ slurm_share_dir }}/ctld/jwt_hs256.key"
+    slurm_replace_configs: true
+
+      
+
+
+  roles:
+    - "{{ roles_parent_path }}/scheduler_lib/scheduler_slurm"
+
+

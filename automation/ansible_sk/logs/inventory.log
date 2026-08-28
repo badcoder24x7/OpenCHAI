@@ -1,0 +1,30 @@
+2026-06-29T17:36:03 [INFO    ] inventory: Inventory saved: 4 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-29T17:36:03 [WARNING ] inventory: Vault password file /opt/OpenCHAI/automation/ansible/.vault_pass has loose permissions (644). Recommended: chmod 600.
+2026-06-29T17:36:04 [ERROR   ] inventory: VaultError: ansible-vault failed: ERROR! The vault-ids default,default are available to encrypt. Specify the vault-id to encrypt with --encrypt-vault-id
+2026-06-29T17:52:18 [INFO    ] inventory: Inventory saved: 5 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-29T17:52:19 [ERROR   ] inventory: VaultError: ansible-vault failed: ERROR! The vault-ids default,default are available to encrypt. Specify the vault-id to encrypt with --encrypt-vault-id
+2026-06-29T18:20:39 [INFO    ] inventory: Inventory saved: 4 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-29T18:20:39 [ERROR   ] inventory: VaultError: ansible-vault failed: ERROR! The vault-ids default,default are available to encrypt. Specify the vault-id to encrypt with --encrypt-vault-id
+2026-06-29T18:22:28 [INFO    ] inventory: Inventory saved: 4 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-29T18:22:28 [ERROR   ] inventory: VaultError: ansible-vault failed: [WARNING]: Error in vault password file loading (default): Invalid vault
+password was provided from file (/opt/OpenCHAI/automation/ansible/.vault_pass)
+ERROR! Invalid vault password was provided from file (/opt/OpenCHAI/automation/ansible/.vault_pass)
+2026-06-29T18:27:30 [INFO    ] inventory: Inventory saved: 4 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-29T18:27:30 [ERROR   ] inventory: VaultError: ansible-vault failed: [WARNING]: Error in vault password file loading (default): Invalid vault
+password was provided from file (/opt/OpenCHAI/automation/ansible/.vault_pass)
+ERROR! Invalid vault password was provided from file (/opt/OpenCHAI/automation/ansible/.vault_pass)
+2026-06-29T18:27:47 [INFO    ] inventory: Inventory saved: 4 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-29T18:27:47 [ERROR   ] inventory: VaultError: ansible-vault failed: ERROR! The vault-ids default,default are available to encrypt. Specify the vault-id to encrypt with --encrypt-vault-id
+2026-06-30T10:37:41 [INFO    ] inventory: Inventory saved: 5 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-30T10:37:42 [ERROR   ] inventory: VaultError: ansible-vault failed: ERROR! The vault-ids default,default are available to encrypt. Specify the vault-id to encrypt with --encrypt-vault-id
+2026-06-30T10:38:42 [INFO    ] inventory: Inventory saved: 5 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-30T10:38:43 [INFO    ] inventory: Vault sync complete. 5 password(s) added/updated.
+2026-06-30T10:38:43 [INFO    ] inventory: Imported 5 host(s) from nodes.txt. DELETE THE SOURCE FILE NOW — it contained plaintext passwords.
+2026-06-30T15:28:48 [INFO    ] inventory: Inventory saved: 5 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-30T15:28:49 [ERROR   ] inventory: VaultError: ansible-vault failed: ERROR! The vault-ids default,default are available to encrypt. Specify the vault-id to encrypt with --encrypt-vault-id
+2026-06-30T15:29:40 [INFO    ] inventory: Inventory saved: 5 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-30T15:29:41 [INFO    ] inventory: Vault sync complete. 0 password(s) added/updated.
+2026-06-30T15:29:41 [INFO    ] inventory: Imported 5 host(s) from ansible/nodes.txt. DELETE THE SOURCE FILE NOW — it contained plaintext passwords.
+2026-06-30T15:37:09 [INFO    ] inventory: Inventory saved: 5 host(s) → /opt/OpenCHAI/automation/ansible/inventory/inventory_def.txt
+2026-06-30T15:37:09 [INFO    ] inventory: Vault sync complete. 0 password(s) added/updated.
+2026-06-30T15:37:09 [INFO    ] inventory: Imported 5 host(s) from ansible/nodes.txt. DELETE THE SOURCE FILE NOW — it contained plaintext passwords.

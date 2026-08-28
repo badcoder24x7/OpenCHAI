@@ -1,0 +1,88 @@
+# ============================================================
+# OpenCHAI Slurm Configuration
+# ============================================================
+
+ClusterName={{ slurm_cluster_name }}
+
+ControlMachine={{ hostvars[slurm_primary_master].ansible_hostname }}
+ControlAddr={{ hostvars[slurm_primary_master].ansible_default_ipv4.address }}
+
+{% if slurm_backup_master is defined %}
+BackupController={{ hostvars[slurm_backup_master].ansible_hostname }}
+BackupAddr={{ hostvars[slurm_backup_master].ansible_default_ipv4.address }}
+{% endif %}
+
+StateSaveLocation={{ slurm_state_dir }}
+
+
+SlurmctldParameters=enable_configless,conmgr_max_connections=8096,conmgr_threads=16,conmgr_connect_timeout=30,conmgr_read_timeout=30,conmgr_quiesce_timeout=60,conmgr_wait_write_delay=5,conmgr_write_timeout=30
+
+# ============================================================
+# Slurm Service Configuration
+# ============================================================
+MpiDefault=none
+ProctrackType=proctrack/cgroup
+PrivateData=jobs,users,accounts
+SlurmctldPidFile=/run/slurmctld.pid
+SlurmctldPort=6817
+SlurmdPidFile=/run/slurmd.pid
+SlurmdPort=6818
+SlurmdSpoolDir={{ slurm_state_dir }}/slurm/d
+SlurmUser={{ slurm_user }}
+SwitchType=switch/none
+TaskPlugin=task/cgroup,task/affinity
+
+ReturnToService=0
+
+HealthCheckProgram=/usr/sbin/nhc
+HealthCheckInterval=300
+HealthCheckNodeState=ANY
+InactiveLimit=0
+KillWait=30
+MinJobAge=300
+SlurmctldTimeout=120
+SlurmdTimeout=300
+Waittime=0
+SchedulerType=sched/backfill
+SelectType=select/cons_tres
+AuthType=auth/munge
+
+
+# ============================================================
+# Slurm Priority Configuration
+# ============================================================
+PriorityType=priority/multifactor
+PriorityDecayHalfLife=14-0
+PriorityCalcPeriod=0-0:05
+PriorityMaxAge=20-0
+PriorityWeightAge=10000
+PriorityWeightFairshare=100000
+PriorityWeightJobSize=1000
+PriorityWeightPartition=15000
+PriorityWeightQOS=100000
+PriorityWeightTRES=CPU=1000,Mem=5000,GRES/gpu=5000
+
+# ============================================================
+# Slurm Accounting Configuration
+# ============================================================
+AccountingStorageEnforce=associations,limits,qos
+AccountingStorageHost={{ inventory_hostname }}
+AccountingStorageTRES=gres/gpu
+AccountingStorageType=accounting_storage/slurmdbd
+JobCompType=jobcomp/none
+JobAcctGatherFrequency=30
+JobAcctGatherType=jobacct_gather/none
+AcctGatherEnergyType=acct_gather_energy/rapl
+AcctGatherNodeFreq=30
+GresTypes=gpu
+
+# ============================================================
+# Slurm Logging Configuration
+# ============================================================
+SlurmctldDebug=info
+SlurmdDebug=info
+SlurmctldLogFile={{ slurm_log_dir }}/slurmctld.log
+SlurmdLogFile={{ slurm_log_dir }}/slurmd.log
+
+
+

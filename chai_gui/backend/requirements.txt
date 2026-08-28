@@ -1,0 +1,23 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+pydantic==2.7.1
+websockets==12.0
+ansible-runner==2.4.0
+PyYAML==6.0.1
+python-multipart==0.0.9
+aiofiles==23.2.1
+httpx==0.27.0
+paramiko==3.4.0             # password-auth SSH test (routes/inventory_def.py ssh-test)
+
+# NOTE: services/vault_service.py and services/ansible_runner.py both shell
+# out to system binaries (ansible-vault, ansible-playbook) that ship with
+# ansible-core. These are NOT pip-installed by this requirements.txt —
+# they must already be on PATH, exactly like ansible-playbook already is
+# for cluster_setup/ playbook execution. Install ansible-core via your
+# distro's package manager (or `pip install ansible-core` system-wide,
+# outside this venv) if either binary is missing.
+
+# ── Authentication ────────────────────────────────────────────────────────────
+python-jose==3.5.0          # JWT signing/verification
+python-pam==2.0.2           # PAM authentication (Linux system credentials)
+passlib==1.7.4              # password hashing utilities (future use)

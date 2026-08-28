@@ -1,0 +1,18 @@
+- name: Setup selected Intel OneApi
+  hosts: all
+  become: true
+  vars_files:
+    - ../../group_vars/all.yml
+
+  vars:
+    intel_source_dir: "{{ bin_dir_path }}/oneapi_rpms"
+    dev_rpm_path: "{{ rpm_stack_path }}/developement_rpms"
+
+    modulepath_dir: "{{ application_base_dir }}/modulefiles/apps"
+    intel_installer: "{{ intel_source_dir }}/{{ intel_installer }}"
+    intel_install_dir: "{{ application_base_dir }}/intel"
+    intel_module_script: "{{ intel_install_dir }}/modulefiles-setup.sh"
+    intel_module_output_dir: "{{ application_base_dir }}/modulefiles/hpc/intel"
+
+  roles:
+    - "{{ roles_parent_path }}/hpc_applications_lib/applications_oneapi"

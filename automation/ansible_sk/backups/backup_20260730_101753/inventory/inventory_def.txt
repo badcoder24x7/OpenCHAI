@@ -1,0 +1,8 @@
+# Ansible Inventory Definition — auto-managed by inventory.py
+# Updated: 2026-07-30T10:14:43.368356
+# Format: node ip user group hostname ssh_port
+
+headnode 172.10.3.201 root headnode headnode 22
+hpc-master01 172.10.3.3 root hpc_master cn03 22
+hpc-master02 172.10.3.4 root hpc_master cn04 22
+main 10.208.34.212 root compute main 22
