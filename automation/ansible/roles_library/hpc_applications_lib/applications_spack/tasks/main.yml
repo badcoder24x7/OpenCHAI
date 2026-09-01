@@ -71,13 +71,20 @@
   register: nsmss_env_dirs
 
 # =========================================================
-# Initialize Spack in each environment
+# Activate, concretize and install each NSMSS environment
 # =========================================================
 
-- name: Source Spack in each NSMSS environment
+- name: Build each NSMSS Spack environment
   ansible.builtin.shell: |
     source {{ application_base_dir }}/spack/share/spack/setup-env.sh
+    spack env deactivate
+    spack env activate .
+    spack concretize -j30
+    spack install -j30
   args:
     executable: /bin/bash
     chdir: "{{ item.path }}"
-  loop: "{{ nsmss_env_dirs.files }}"  
+  loop: "{{ nsmss_env_dirs.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  register: nsmss_spack_install      
